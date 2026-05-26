@@ -13,8 +13,8 @@ np.random.seed(4627)
 # same for all queues
 
 # chi chi
-df1 = 3
-df2 = 6
+df1 = 2
+df2 = 4
 
 # create cashier agents, customer agents, and the queue
 def service_time(customer):
@@ -26,11 +26,11 @@ queue = agents.Queue(cashiers, customers)
 # create initial event
 def interarr_time():
     return np.random.chisquare(df1)
-start_event = events.Arrival(scheduled_time=0., interarr_time=interarr_time, queue=queue)
+start_event = events.Arrival(scheduled_time=0., interarr_time=interarr_time, queues=[queue])
 
 # run it!
 des = events.DES(start_event)
-des.run(50)
+des.run(120)
 
 print(queue.timepoints)
 print(queue.amounts_customers)
