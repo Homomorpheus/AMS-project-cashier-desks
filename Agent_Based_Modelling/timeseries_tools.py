@@ -16,6 +16,11 @@ class TimeSeriesStepFunction:
         self.timepoints = timepoints
         self.values = values
 
+    def insert(self, time, value):
+        "helper function to insert new data"
+        self.timepoints.append(time)
+        self.values.append(value)
+
     def evaluate(self, time):
         "evaluate function(time)"
         # if time is an array, apply to array elements
