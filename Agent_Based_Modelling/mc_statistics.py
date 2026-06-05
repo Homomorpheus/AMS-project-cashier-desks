@@ -22,7 +22,7 @@ def simulate(seed, simulation_end_time, service_time, interarr_time, amount_cash
     des.run(simulation_end_time)
 
     # collect data for statistics
-    queue_length = timeseries_tools.TimeSeriesStepFunction(queue.timepoints, queue.amounts_customers)
+    queue_length = timeseries_tools.TimeSeriesStepFunction(queue.timepoints_amounts_customers, queue.amounts_customers)
     cashiers_busy = [timeseries_tools.TimeSeriesStepFunction(cashier.timepoints, [int(busy) for busy in cashier.busy_at_time]) for cashier in cashiers]
     cashier_throughputs = [cashier.throughput(0, simulation_end_time) for cashier in cashiers]
 

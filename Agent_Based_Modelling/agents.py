@@ -77,7 +77,7 @@ class Queue:
         self.customers = customers
 
         if self.log:
-            self.timepoints = [time]
+            self.timepoints_amounts_customers = [time]
             self.amounts_customers = [len(self.customers)]
             self.customer_waiting_times = []
 
@@ -99,7 +99,7 @@ class Queue:
         # keep track of chain length
         if self.log:
             assert time is not None
-            self.timepoints.append(time)
+            self.timepoints_amounts_customers.append(time)
             self.amounts_customers.append(self.amounts_customers[-1] + 1)
 
     def remove_customer(self, time = None):
@@ -111,7 +111,7 @@ class Queue:
             # keep track of chain length
             if self.log:
                 assert time is not None
-                self.timepoints.append(time)
+                self.timepoints_amounts_customers.append(time)
                 self.amounts_customers.append(self.amounts_customers[-1] - 1)
 
             # remove customer from queue

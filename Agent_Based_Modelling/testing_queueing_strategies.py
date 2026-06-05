@@ -24,7 +24,7 @@ def simulate_multiqueue(seed, simulation_end_time, service_time, interarr_time, 
     des.run(simulation_end_time)
 
     # collect data for statistics
-    queue_lengths = [timeseries_tools.TimeSeriesStepFunction(queue.timepoints, queue.amounts_customers) for queue in queues]
+    queue_lengths = [timeseries_tools.TimeSeriesStepFunction(queue.timepoints_amounts_customers, queue.amounts_customers) for queue in queues]
     cashiers_busy = [timeseries_tools.TimeSeriesStepFunction(cashier.timepoints, [int(busy) for busy in cashier.busy_at_time]) for cashier in cashiers]
     cashier_throughputs = [cashier.throughput(0, simulation_end_time) for cashier in cashiers]
     waiting_times = [queue.customer_waiting_times for queue in queues]

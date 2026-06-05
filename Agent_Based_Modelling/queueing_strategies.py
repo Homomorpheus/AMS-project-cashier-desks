@@ -62,7 +62,7 @@ for i in range(k):
 plt.legend()
 plt.show()
 
-merged_timepoints = list(heapq.merge(*[queue.timepoints for queue in queues]))
+merged_timepoints = list(heapq.merge(*[queue.timepoints_amounts_customers for queue in queues]))
 queue1_length = timeseries_tools.TimeSeriesStepFunction(queues[0].timepoints, queues[0].amounts_customers)
 queue2_length = timeseries_tools.TimeSeriesStepFunction(queues[1].timepoints, queues[1].amounts_customers)
 added_queue_length = [queue1_length.evaluate(t) + queue2_length.evaluate(t) for t in merged_timepoints]

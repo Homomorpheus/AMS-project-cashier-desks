@@ -32,7 +32,7 @@ start_event = events.Arrival(scheduled_time=0., interarr_time=interarr_time, que
 des = events.DES(start_event)
 des.run(120)
 
-print(queue.timepoints)
+print(queue.timepoints_amounts_customers)
 print(queue.amounts_customers)
 
 plt.step(queue.timepoints, queue.amounts_customers, where='post', label='Queue length')
