@@ -55,16 +55,16 @@ des = events.DES(start_event)
 des.run(120)
 
 for i in range(k):
-    print(queues[i].timepoints)
+    print(queues[i].timepoints_amounts_customers)
     print(queues[i].amounts_customers)
-    plt.step(queues[i].timepoints, queues[i].amounts_customers, where='post', label=f'Queue {i+1}')
+    plt.step(queues[i].timepoints_amounts_customers, queues[i].amounts_customers, where='post', label=f'Queue {i+1}')
 
 plt.legend()
 plt.show()
 
 merged_timepoints = list(heapq.merge(*[queue.timepoints_amounts_customers for queue in queues]))
-queue1_length = timeseries_tools.TimeSeriesStepFunction(queues[0].timepoints, queues[0].amounts_customers)
-queue2_length = timeseries_tools.TimeSeriesStepFunction(queues[1].timepoints, queues[1].amounts_customers)
+queue1_length = timeseries_tools.TimeSeriesStepFunction(queues[0].timepoints_amounts_customers, queues[0].amounts_customers)
+queue2_length = timeseries_tools.TimeSeriesStepFunction(queues[1].timepoints_amounts_customers, queues[1].amounts_customers)
 added_queue_length = [queue1_length.evaluate(t) + queue2_length.evaluate(t) for t in merged_timepoints]
 plt.step(merged_timepoints, added_queue_length, where='post', label='added Queue length')
 plt.legend()

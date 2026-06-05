@@ -35,6 +35,6 @@ des.run(120)
 print(queue.timepoints_amounts_customers)
 print(queue.amounts_customers)
 
-plt.step(queue.timepoints, queue.amounts_customers, where='post', label='Queue length')
+plt.step(queue.timepoints_amounts_customers, queue.amounts_customers, where='post', label='Queue length')
 plt.legend()
 plt.show()
