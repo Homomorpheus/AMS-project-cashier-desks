@@ -6,6 +6,7 @@ class DES:
     """discrete event simulation class;
     manages the event list, runs everything"""
     def __init__(self, start_event):
+        # event_list has to accessed using heapq!
         self.event_list = [start_event]
 
     def push(self, event):
@@ -18,12 +19,19 @@ class DES:
 
     def run(self, end_time):
         "run the DES"
+        time = float("-inf")
         while True:
             current_event = self.pop()
+            # if self.event_list[0].scheduled_time < current_event.scheduled_time:
+            #     breakpoint()
+            if current_event.scheduled_time < time:
+                # breakpoint()
+                raise RuntimeError("event list not sorted")
             time = current_event.scheduled_time
             if time > end_time:
                 break
             current_event.execute(self)
+            # print(list(map(lambda event: event.scheduled_time, filter(lambda event: isinstance(event, Arrival), self.event_list))))
 
     def __str__(self):
         return f"Discrete event simulation, with {len(self.event_list)} events in queue"
@@ -110,6 +118,9 @@ class Arrival(Event):
 
     def execute(self, des):
         # add Customer to shortest queue
+        # h, tm = divmod(self.scheduled_time, 60*60)
+        # m, s = divmod(tm, 60)
+        # print(h, m, s)
         """print('Customer arriving')
         print('Current queue lengths:')
         for queue in self.queues:
@@ -175,11 +186,15 @@ class StartService(Event):
 
         # store waiting time
         self.customer.waiting_time = self.scheduled_time - self.customer.arrival_in_queue
+        self.customer.start_service_time = self.scheduled_time
         if self.chosen_queue.log:
             self.chosen_queue.customer_waiting_times.append(self.customer.waiting_time)
 
         # schedule end of service
-        end_service_time = self.scheduled_time + self.cashier.service_time(self.customer)
+        service_duration = self.cashier.service_time(self.customer)
+        end_service_time = self.scheduled_time + service_duration
+        if end_service_time > 18*60*60:
+            breakpoint()
         des.push(EndService(end_service_time, self.queues, self.cashier, self.chosen_queue_index))
 
     def __str__(self):

@@ -21,9 +21,10 @@ print(mean)
 # Parameter
 df = 4  # mean = df
 
-x = np.linspace(0, 15, 300)
+x = np.linspace(0, 1000, 500)
 plt.plot(x, chi2.pdf(x, df=df), label='Chi2')
 plt.plot(x, expon.pdf(x, scale=df), label='exp')
+plt.plot(x, gamma.pdf(x, 20, scale=20), label='gamma')
 plt.title(f"Chi squared distribution with {df} degrees of freedom")
 plt.legend()
 plt.show()

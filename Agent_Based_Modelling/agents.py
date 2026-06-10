@@ -7,6 +7,7 @@ class Customer:
         self.arrival_in_queue = arrival_in_queue
         self.properties = properties
         self.waiting_time = None
+        self.start_service_time = None
 
     def __str__(self):
         return f"Customer arrived at t = {self.arrival_in_queue}, with properties {self.properties}"
