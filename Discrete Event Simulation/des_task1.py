@@ -5,6 +5,12 @@ import heapq
 import numpy as np
 import matplotlib.pyplot as plt
 from bisect import bisect_left
+import sys
+if sys.platform == "win32":
+    sys.path.append(r"..\Agent_Based_Modelling")
+elif sys.platform == "linux":
+    sys.path.append(r"../Agent_Based_Modelling")
+import timeseries_tools
 
 
 class Event:
@@ -88,46 +94,58 @@ def run_simulation(k, arrival_time, service_time, T):
 # run a given number of Monte Carlo simulations and calculate mean and var of data
 def MonteCarlo(runs, k, arrival_time, service_time, T):
 
-    mean_queue = np.zeros(int(T)+1)
-    mean_server_utilisation = np.zeros(int(T)+1)
-    mean_sq_queue = np.zeros(int(T)+1)
-    mean_sq_server_utilisation = np.zeros(int(T)+1)
-    var_queue = np.zeros(int(T)+1)
-    var_server_utilisation = np.zeros(int(T)+1)
+    queue_length_data = []
+    server_utilisation_data = []
 
     for i in range(1, runs+1):
 
         timepoints, Q_data, S_data = run_simulation(k, arrival_time, service_time, T)
-        """plt.step(timepoints, Q_data, where='post', color='red')
-        plt.step(timepoints, S_data, where='post', color='blue')"""
+        queue_length_data.append(timeseries_tools.TimeSeriesStepFunction(timepoints, Q_data))
+        server_utilisation_data.append(timeseries_tools.TimeSeriesStepFunction(timepoints, S_data))
 
-        equidistant_Q = [Q_data[0]]
-        equidistant_S = [S_data[0]]
+    return queue_length_data, server_utilisation_data
 
-        lo = 0
-        for j in range(1, int(T)+1):
-            # find last index s.t. timepoints[index] < T
-            idx = bisect_left(timepoints, j, lo=lo) - 1
-            equidistant_Q.append(Q_data[idx])
-            equidistant_S.append(S_data[idx])
-            lo = max(lo, idx) if idx >= 0 else lo
-            # update means
-            mean_queue[j] = (i-1)/i*mean_queue[j] + 1/i*equidistant_Q[j]
-            mean_server_utilisation[j] = (i-1)/i*mean_server_utilisation[j] + 1/i*equidistant_S[j]
-            mean_sq_queue[j] = (i-1)/i*mean_sq_queue[j] + 1/i*equidistant_Q[j]**2
-            mean_sq_server_utilisation[j] = (i - 1) / i * mean_sq_server_utilisation[j] + 1 / i * equidistant_S[j]**2
-            if i > 1:
-                var_queue[j] = i/(i-1)*(mean_sq_queue[j] - mean_queue[j]**2)
-                var_server_utilisation[j] = i/(i-1)*(mean_sq_server_utilisation[j] - mean_server_utilisation[j]**2)
 
-    """plt.title('Queue length: red, Server utilisation: blue')
-    plt.show()"""
+def plot_queue_length_statistics(q_data, T):
+    t_eval = np.linspace(0, T, T+1)
+    queue_length_mean = timeseries_tools.time_series_mean(q_data, t_eval)
+    queue_length_std = timeseries_tools.time_series_std_deviation(q_data, t_eval)
+    queue_length_median = timeseries_tools.time_series_quantile(q_data, t_eval, 0.5)
+    queue_length_1st_quantile = timeseries_tools.time_series_quantile(q_data, t_eval, 0.25)
+    queue_length_3rd_quantile = timeseries_tools.time_series_quantile(q_data, t_eval, 0.75)
 
-    return mean_queue, mean_server_utilisation, var_queue, var_server_utilisation
+    fig, ax = plt.subplots(nrows=2, sharex=True, sharey=True)
+
+    ax[0].plot(t_eval, queue_length_mean, label='Queue length mean')
+    ax[0].fill_between(t_eval, queue_length_mean - queue_length_std, queue_length_mean + queue_length_std, alpha=0.3, label='+-std')
+    ax[0].legend()
+
+    ax[1].step(t_eval, queue_length_median, label='Queue length median')
+    ax[1].fill_between(t_eval, queue_length_1st_quantile, queue_length_3rd_quantile, step='post', alpha=0.3, label='1st and 3rd quartile')
+    ax[1].legend()
+
+
+def plot_server_utilisation_statistics(s_data, T):
+    t_eval = np.linspace(0, T, T+1)
+    server_util_mean = timeseries_tools.time_series_mean(s_data, t_eval)
+    server_util_std = timeseries_tools.time_series_std_deviation(s_data, t_eval)
+    server_util_median = timeseries_tools.time_series_quantile(s_data, t_eval, 0.5)
+    server_util_1st_quantile = timeseries_tools.time_series_quantile(s_data, t_eval, 0.25)
+    server_util_3rd_quantile = timeseries_tools.time_series_quantile(s_data, t_eval, 0.75)
+
+    fig, ax = plt.subplots(nrows=2, sharex=True, sharey=True)
+
+    ax[0].plot(t_eval, server_util_mean, label='Server utilisation mean +- std')
+    ax[0].fill_between(t_eval, server_util_mean - server_util_std, server_util_mean + server_util_std, alpha=0.3)
+    ax[0].legend()
+
+    ax[1].plot(t_eval, server_util_median, label='Server utilisation median')
+    ax[1].fill_between(t_eval, server_util_1st_quantile, server_util_3rd_quantile, alpha=0.3, label='1st and 3rd quartile')
+    ax[1].legend()
 
 
 np.random.seed(4627)
-k = 5  # number of servers
+k = 2  # number of servers
 
 """# exp exp
 scale_arr = 0.13
@@ -146,7 +164,7 @@ service_time = lambda : np.random.gamma(shape2, scale2)
 """
 
 # chi chi
-df1 = 1
+df1 = 2
 df2 = 4
 arrival_time = lambda : np.random.chisquare(df1)
 service_time = lambda : np.random.chisquare(df2)
@@ -159,16 +177,12 @@ plt.legend()
 plt.show()"""
 
 # Monte Carlo Sim
-runs = 300
-mean_queue, mean_servers, var_queue, var_servers = MonteCarlo(runs, k, arrival_time, service_time, T)
-plt.step(range(T+1), mean_queue, where='post', color='red', label='mean queue length')
-plt.step(range(T+1), mean_servers, where='post', color='blue', label='mean server utilisation')
-plt.step(range(T+1), mean_queue - np.sqrt(var_queue), where='post', color='red', linestyle='dashed', linewidth=1)
-plt.step(range(T+1), mean_queue + np.sqrt(var_queue), where='post', color='red', linestyle='dashed', linewidth=1)
-plt.step(range(T+1), mean_servers - np.sqrt(var_servers), where='post', color='blue', linestyle='dashed', linewidth=1)
-plt.step(range(T+1), mean_servers + np.sqrt(var_servers), where='post', color='blue', linestyle='dashed', linewidth=1)
-plt.legend()
+runs = 1000
+q_data, s_data = MonteCarlo(runs, k, arrival_time, service_time, T)
+plot_queue_length_statistics(q_data, T)
+plot_server_utilisation_statistics(s_data, T)
 plt.show()
+
 
 # observed behaviour:
 # 1) we can either get a small variance for server utilisation OR for queue length, not both.

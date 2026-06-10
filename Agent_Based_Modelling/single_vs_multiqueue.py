@@ -140,7 +140,7 @@ if __name__=="__main__":
 
     simulation_end_time = 60
 
-    k = 10
+    k = 2
     """# chi chi
     df1 = 3
     df2 = 4
@@ -152,8 +152,8 @@ if __name__=="__main__":
         return np.random.chisquare(df1)"""
 
     # exp exp
-    scale_arr = 0.5
-    scale_serv = 2  # mean of exp(scale) = scale
+    scale_arr = 2
+    scale_serv = 4  # mean of exp(scale) = scale
 
     def service_time(customer):
         return np.random.exponential(scale_serv)
