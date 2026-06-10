@@ -62,12 +62,28 @@ class Cashier:
         return f"Cashier which is {'not ' if not self._busy else '' }busy, with properties {self.properties}"
 
 class Queue:
-    "queue of customers, and the cashiers responsible for the queue"
+    """
+    queue of customers, and the cashiers responsible for the queue
+
+    Arguments:
+        cashiers
+        customers
+        time -- simulation time at which queue object comes to life (default 0.)
+        active -- whether the queue is occupied by its cashiers
+        threshold_lo -- if there are less customers in the queue than threshold_lo,
+                        deactivate it
+        threshold_hi -- if there are more customers in the queue than threshold_hi,
+                        try to activate another queue
+        time_to_activate -- function to sample randomly from the time it takes for
+                            the cashiers to come back to the queue
+    """
 
     # whether to keep track of changes in the queue of customers
     log = True
 
-    def __init__(self, cashiers: list[Cashier]=[], customers: list[Customer]=[], time = 0.):
+    def __init__(self, cashiers: list[Cashier]=[], customers: list[Customer]=[],
+                 time = 0., active=True, threshold_lo=float("-inf"),
+                 threshold_hi=float("inf"), time_to_activate=lambda: 0):
         for cashier in cashiers:
             assert isinstance(cashier, Cashier)
         for customer in customers:
@@ -75,11 +91,18 @@ class Queue:
 
         self.cashiers = cashiers
         self.customers = customers
+        self._active = active
+        self.threshold_lo = threshold_lo
+        self.threshold_hi = threshold_hi
+        assert threshold_lo < threshold_hi
+        self.time_to_activate = time_to_activate
 
         if self.log:
-            self.timepoints = [time]
+            self.timepoints_amounts_customers = [time]
             self.amounts_customers = [len(self.customers)]
             self.customer_waiting_times = []
+            self.timepoints_activity_states = [time]
+            self.activity_states = [active]
 
     def find_free_cashier(self):
         """find a cashier that is not busy;
@@ -93,31 +116,39 @@ class Queue:
     def add_customer(self, customer: Customer, time = None):
         "add customer to queue"
         assert isinstance(customer, Customer)
-        assert customer.arrival_in_queue == time
+        # assert customer.arrival_in_queue == time
         self.customers.append(customer)
 
         # keep track of chain length
         if self.log:
             assert time is not None
-            self.timepoints.append(time)
+            self.timepoints_amounts_customers.append(time)
             self.amounts_customers.append(self.amounts_customers[-1] + 1)
 
-    def remove_customer(self, time = None):
+    def remove_customer(self, time = None, index = 0):
         """remove first customer from queue,
         returns 'empty' if there are no customers in the queue"""
         if len(self.customers) == 0:
             return "empty"
         else:
-            # keep track of chain length
+            # keep track of queue length
             if self.log:
                 assert time is not None
-                self.timepoints.append(time)
+                self.timepoints_amounts_customers.append(time)
                 self.amounts_customers.append(self.amounts_customers[-1] - 1)
 
             # remove customer from queue
-            return self.customers.pop(0)
+            return self.customers.pop(index)
 
+    def get_active(self):
+        return self._active
 
+    def set_active(self, boolean, time):
+        if self._active != boolean:
+            self._active = boolean
+            if self.log:
+                self.timepoints_activity_states.append(time)
+                self.activity_states.append(boolean)
 
 
     def __str__(self):

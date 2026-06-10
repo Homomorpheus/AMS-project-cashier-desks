@@ -4,6 +4,8 @@ import bisect
 import collections.abc
 
 import numpy as np
+import heapq
+from itertools import groupby
 
 
 class TimeSeriesStepFunction:
@@ -13,6 +15,11 @@ class TimeSeriesStepFunction:
         assert len(timepoints) == len(values)
         self.timepoints = timepoints
         self.values = values
+
+    def insert(self, time, value):
+        "helper function to insert new data"
+        self.timepoints.append(time)
+        self.values.append(value)
 
     def evaluate(self, time):
         "evaluate function(time)"
@@ -26,6 +33,19 @@ class TimeSeriesStepFunction:
             value = self.values[insertion_index - 1]
             return value
 
+    def __add__(self, other):
+        merged_timepoints = heapq.merge(self.timepoints, other.timepoints)
+        merged_timepoints_deduped = [k for k, _ in groupby(merged_timepoints)]
+        added_values = [self.evaluate(t) + other.evaluate(t) for t in merged_timepoints_deduped]
+        return TimeSeriesStepFunction(merged_timepoints_deduped, added_values)
+
+    # necessary so we can use the built-in "sum(...)"
+    def __radd__(self, other):
+        if other == 0:
+            return self
+        return self.__add__(other)
+
+
 def time_series_mean(multi_timeseries:list[TimeSeriesStepFunction], eval_time):
     "evaluate the mean of instances of TimeSeriesStepFunction, at the time points eval_time"
     multi_values = np.array([timeseries.evaluate(eval_time) for timeseries in multi_timeseries])
@@ -33,12 +53,14 @@ def time_series_mean(multi_timeseries:list[TimeSeriesStepFunction], eval_time):
 
     return mean
 
+
 def time_series_std_deviation(multi_timeseries:list[TimeSeriesStepFunction], eval_time):
     "evaluate the standard deviation of instances of TimeSeriesStepFunction, at the time points eval_time"
     multi_values = np.array([timeseries.evaluate(eval_time) for timeseries in multi_timeseries])
     std = np.std(multi_values, axis=0, ddof=1)
 
     return std
+
 
 def time_series_quantile(multi_timeseries:list[TimeSeriesStepFunction], eval_time, q):
     "evaluate the pointwise q-th quantile (of instances of TimeSeriesStepFunction, at the time points eval_time)"

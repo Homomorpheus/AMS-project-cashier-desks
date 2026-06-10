@@ -15,18 +15,19 @@ def simulate(seed, simulation_end_time, service_time, interarr_time, amount_cash
     queue = agents.Queue(cashiers, customers)
 
     # create initial event
-    start_event = events.Arrival(scheduled_time=0., interarr_time=interarr_time, queue=queue)
+    start_event = events.Arrival(scheduled_time=0., interarr_time=interarr_time, queues=[queue])
 
     # run the DES
     des = events.DES(start_event)
     des.run(simulation_end_time)
 
     # collect data for statistics
-    queue_length = timeseries_tools.TimeSeriesStepFunction(queue.timepoints, queue.amounts_customers)
+    queue_length = timeseries_tools.TimeSeriesStepFunction(queue.timepoints_amounts_customers, queue.amounts_customers)
     cashiers_busy = [timeseries_tools.TimeSeriesStepFunction(cashier.timepoints, [int(busy) for busy in cashier.busy_at_time]) for cashier in cashiers]
     cashier_throughputs = [cashier.throughput(0, simulation_end_time) for cashier in cashiers]
 
     return (queue_length, cashiers_busy, queue.customer_waiting_times, cashier_throughputs)
+
 
 def plot_queue_length_statistics(queue_length_data:list[timeseries_tools.TimeSeriesStepFunction], simulation_end_time):
     # plotting
@@ -34,7 +35,7 @@ def plot_queue_length_statistics(queue_length_data:list[timeseries_tools.TimeSer
 
     for timeseries in queue_length_data:
         ax[0].step(timeseries.timepoints, timeseries.values, where='post', color=(0.8, 0.8, 0.8))
-        ax[1].step(timeseries.timepoints, timeseries.values, where='post', color=(0.8, 0.8, 0.8))
+        ax[1].step(timeseries.timepoints, timeseries.values, where='post', color=(0.8, 0.8, 0.8), zorder=1)
 
     # mean plotting
     x = np.linspace(0, simulation_end_time)
@@ -43,9 +44,9 @@ def plot_queue_length_statistics(queue_length_data:list[timeseries_tools.TimeSer
     # ax[0].step(x, mean, label="Queue length mean", where="post")
 
     # mean +- standard deviation
-    std_dev = timeseries_tools.time_series_std_deviation(queue_length_data, x)
-    ax[0].plot(x, mean - std_dev, label="mean - std deviation")
-    ax[0].plot(x, mean + std_dev, label="mean + std deviation")
+    # std_dev = timeseries_tools.time_series_std_deviation(queue_length_data, x)
+    # ax[0].plot(x, mean - std_dev, label="mean - std deviation")
+    # ax[0].plot(x, mean + std_dev, label="mean + std deviation")
 
     # median
     mean = timeseries_tools.time_series_quantile(queue_length_data, x, 0.5)
@@ -53,35 +54,37 @@ def plot_queue_length_statistics(queue_length_data:list[timeseries_tools.TimeSer
 
     # 1. quartile
     quartile_1 = timeseries_tools.time_series_quantile(queue_length_data, x, 0.25)
-    ax[1].plot(x, quartile_1, label="1. quartile")
-
+    # ax[1].plot(x, quartile_1, label="1. quartile")
     # 3. quartile
     quartile_2 = timeseries_tools.time_series_quantile(queue_length_data, x, 0.75)
-    ax[1].plot(x, quartile_2, label="3. quartile")
+    # ax[1].plot(x, quartile_2, label="3. quartile")
+    ax[1].fill_between(x, quartile_2, quartile_1, color="blue", alpha=0.1)
 
     ax[0].legend()
     ax[1].legend()
+
 
 def plot_cashiers_busy(cashiers_busy_data, simulation_end_time):
     cashiers_busy_sorted_by_cashiers = [[cashiers_busy_data[j][i] for j in range(len(cashiers_busy_data))] for i in range(len(cashiers_busy_data[0]))]
 
     amount_cashiers = len(cashiers_busy_sorted_by_cashiers)
-    fig, ax = plt.subplots(nrows=amount_cashiers)
+    fig, ax = plt.subplots(nrows=amount_cashiers, sharex=True, sharey=True)
     x = np.arange(0, simulation_end_time + 1)
 
     for i in range(amount_cashiers):
         multi_timeseries = cashiers_busy_sorted_by_cashiers[i]
 
-        for series in multi_timeseries:
-            ax[i].step(series.timepoints, series.values, where='post', color=(0.8, 0.8, 0.8))
+        # for series in multi_timeseries:
+        #     ax[i].step(series.timepoints, series.values, where='post', color=(0.8, 0.8, 0.8))
 
         # 1. quartile
         quartile_1 = timeseries_tools.time_series_quantile(multi_timeseries, x, 0.25)
-        ax[i].plot(x, quartile_1, label="1. quartile")
+        # ax[i].plot(x, quartile_1, label="1. quartile")
 
         # 3. quartile
         quartile_2 = timeseries_tools.time_series_quantile(multi_timeseries, x, 0.75)
-        ax[i].plot(x, quartile_2, label="3. quartile")
+        # ax[i].plot(x, quartile_2, label="3. quartile")
+        ax[i].fill_between(x, quartile_2, quartile_1, color="blue", alpha=0.1)
 
         # median
         median = timeseries_tools.time_series_quantile(multi_timeseries, x, 0.5)
@@ -91,11 +94,11 @@ def plot_cashiers_busy(cashiers_busy_data, simulation_end_time):
 
 if __name__=="__main__":
 
-    simulation_end_time = 50
+    simulation_end_time = 120
 
     # chi chi
-    df1 = 3
-    df2 = 1
+    df1 = 1
+    df2 = 4
 
     def service_time(customer):
         return np.random.chisquare(df2)
@@ -106,7 +109,7 @@ if __name__=="__main__":
     # generate simulation seeds
     np.random.seed(17)
     simulation_size = 30
-    seeds = np.random.randint(1e10, size=simulation_size)
+    seeds = np.random.randint(2**31, size=simulation_size)
 
     # run Monte Carlo simulation
     simulation_results = list(map(lambda seed: simulate(seed, simulation_end_time, service_time, interarr_time), seeds))
