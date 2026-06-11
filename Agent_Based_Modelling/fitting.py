@@ -168,6 +168,7 @@ def develop_from_best_initial_values(amount_initial_values, save=True):
 
 
 if __name__=="__main__":
+    np.random.seed(43)
     # print(spsa(lambda x: np.linalg.norm(x) + np.random.normal() + 1, np.array([5., 7.]), c=1, first_step_magnitude_low=1., amount_iterations=500, gradient_mean_size=5))
     # graphical_plot()
     # raise SystemExit
@@ -190,10 +191,12 @@ if __name__=="__main__":
     # print(np.mean(samples))
     # print(np.std(samples))
     #
-    # np.random.seed(43)
-    samples = [target(np.array([9.17970246, 1.66294952, 9.65026164, 3.47048503])) for _ in range(20)]
-    print(np.mean(samples))
-    print(np.std(samples))
+    #
+    #
+
+    # samples = [target(np.array([9.17970246, 1.66294952, 9.65026164, 3.47048503])) for _ in range(20)]
+    # print(np.mean(samples))
+    # print(np.std(samples))
 
     # print("end")
 
@@ -204,14 +207,15 @@ if __name__=="__main__":
         # [2.5,   0., 2.5, 0.] (err 13 mio)
 
 
-    # opt = sa.sa_pos(target, np.array([30., 0.1, 30., 0.1]), c=0.5, first_step_magnitude_low=7, amount_iterations=500, gradient_mean_size=3, eps=np.array([1, 0., 1, 0.]), param_switch=3)
-    # print(opt)
-    try_out_initial_values()
+    opt = sa.sa_pos_adaptive(target, np.array([1.0e+03,1.0e+03,1.000000000000000056e-01,1.000000000000000056e-01]), c=0.5, first_step_magnitude_low=7, amount_iterations=500, gradient_mean_size=3, eps=np.array([1, 0., 1, 0.]), param_switch=3)
+    print(opt)
+    # try_out_initial_values()
     # develop_from_best_initial_values(5)
 
 
-    # import scipy as sc
-    # res = sc.optimize.dual_annealing(lambda x, *args: target(x), [(0.1, 10), (0, 5), (0.1, 10), (0, 5)], maxiter=5)
-    # print(res.x)
-    # print(res.fun)
-    # print(res.message)
+
+    import scipy as sc
+    res = sc.optimize.dual_annealing(lambda x, *args: target(x), [(0.1, 1000), (0, 50), (0.1, 1000), (0, 50)], maxiter=5)
+    print(res.x)
+    print(res.fun)
+    print(res.message)

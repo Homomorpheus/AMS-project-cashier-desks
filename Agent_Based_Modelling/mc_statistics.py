@@ -29,7 +29,7 @@ def simulate(seed, simulation_end_time, service_time, interarr_time, amount_cash
     return (queue_length, cashiers_busy, queue.customer_waiting_times, cashier_throughputs)
 
 
-def plot_queue_length_statistics(queue_length_data:list[timeseries_tools.TimeSeriesStepFunction], simulation_end_time):
+def plot_queue_length_statistics(queue_length_data:list[timeseries_tools.TimeSeriesStepFunction], simulation_end_time, filename=None):
     # plotting
     fig, ax = plt.subplots(nrows=2, sharex=True, sharey=True)
 
@@ -40,7 +40,7 @@ def plot_queue_length_statistics(queue_length_data:list[timeseries_tools.TimeSer
     # mean plotting
     x = np.linspace(0, simulation_end_time)
     mean = timeseries_tools.time_series_mean(queue_length_data, x)
-    ax[0].plot(x, mean, label="Queue length mean")
+    ax[0].plot(x, mean, label="Mittelwert der Schlangen-Länge")
     # ax[0].step(x, mean, label="Queue length mean", where="post")
 
     # mean +- standard deviation
@@ -50,7 +50,7 @@ def plot_queue_length_statistics(queue_length_data:list[timeseries_tools.TimeSer
 
     # median
     mean = timeseries_tools.time_series_quantile(queue_length_data, x, 0.5)
-    ax[1].plot(x, mean, label="Queue length median")
+    ax[1].plot(x, mean, label="Median der Schlangen-Länge")
 
     # 1. quartile
     quartile_1 = timeseries_tools.time_series_quantile(queue_length_data, x, 0.25)
@@ -63,8 +63,11 @@ def plot_queue_length_statistics(queue_length_data:list[timeseries_tools.TimeSer
     ax[0].legend()
     ax[1].legend()
 
+    if filename is not None:
+        plt.savefig(filename)
 
-def plot_cashiers_busy(cashiers_busy_data, simulation_end_time):
+
+def plot_cashiers_busy(cashiers_busy_data, simulation_end_time, filename=None):
     cashiers_busy_sorted_by_cashiers = [[cashiers_busy_data[j][i] for j in range(len(cashiers_busy_data))] for i in range(len(cashiers_busy_data[0]))]
 
     amount_cashiers = len(cashiers_busy_sorted_by_cashiers)
@@ -92,6 +95,9 @@ def plot_cashiers_busy(cashiers_busy_data, simulation_end_time):
 
         ax[i].legend()
 
+    if filename is not None:
+        plt.savefig(filename)
+
 if __name__=="__main__":
 
     simulation_end_time = 120
@@ -116,11 +122,11 @@ if __name__=="__main__":
 
     # plot queue length
     queue_length_data = [result[0] for result in simulation_results]
-    plot_queue_length_statistics(queue_length_data, simulation_end_time)
+    plot_queue_length_statistics(queue_length_data, simulation_end_time, filename="plots/mc_statistics_queue_length.pdf")
 
     # plot how busy the cashiers are
     cashiers_busy_data = [result[1] for result in simulation_results]
-    plot_cashiers_busy(cashiers_busy_data, simulation_end_time)
+    plot_cashiers_busy(cashiers_busy_data, simulation_end_time, filename="plots/mc_statistics_cashiers_busy.pdf")
 
     # print mean and sd of customer waiting time
     customer_waiting_times = list(itertools.chain.from_iterable([result[2] for result in simulation_results]))

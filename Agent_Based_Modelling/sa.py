@@ -142,6 +142,7 @@ def sa_pos_adaptive(objective_fctn, start, c, first_step_magnitude_low, amount_i
         return approx
 
     current_position = np.asarray(start, dtype=np.float64).copy()
+    last_value_sample = [objective_fctn(current_position) for _ in range(2)]
 
     for k in range(1, amount_iterations + 1):
         last_position = current_position.copy()
@@ -153,12 +154,15 @@ def sa_pos_adaptive(objective_fctn, start, c, first_step_magnitude_low, amount_i
         current_position = truncate(current_position)
 
         # adaptive part, bisection
-        # while True:
-        #     value_sample = [target(current_position) for _ in range(2)]
-        #     if np.
-        #     if np.max(value_sample) < np.min(last_value_sample):
-        #         ...
-        raise SystemExit
+        while True:
+            value_sample = [objective_fctn(current_position) for _ in range(2)]
+            if np.mean(value_sample) > np.mean(last_value_sample):
+                print(f"step back from {current_position} to {(current_position + last_position) / 2} as {np.mean(value_sample)} > {np.mean(last_value_sample)}")
+                current_position = (current_position + last_position) / 2
+            else:
+                last_value_sample = value_sample
+                print(f"accept {current_position} with value {np.mean(value_sample)}")
+                break
 
         print(f"position: {current_position} with gradient: {approx_gradient_mean}")
 
