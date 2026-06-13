@@ -11,6 +11,7 @@ import numpy as np
 import agents
 import events
 import timeseries_tools
+import itertools
 
 # %%
 
@@ -20,7 +21,7 @@ simulation_end_time = 120
 # chi chi
 df1 = 1
 df2 = 4
-df3 = 4
+df3 = 2
 
 def service_time(customer):
     return np.random.chisquare(df2)
@@ -33,7 +34,7 @@ def time_to_activate():
 
 amount_cashiers = 5
 
-simulation_size = 300
+simulation_size = 1000
 
 
 # %%
@@ -82,29 +83,40 @@ def plot_multi_queue_length_statistics(queue_length_data, simulation_end_time):
     # restructure by queue
     amount_queues = len(queue_length_data[0])
     length_by_queues = [[result[i] for result in queue_length_data] for i in range(amount_queues)]
+    sum_queue_lengths = [sum([result[k] for k in range(amount_queues)]) for result in queue_length_data]
 
-    fig, ax = plt.subplots(nrows=1 + amount_queues, sharex=True, sharey=True)
+    # plot overall queue length statistics
+    x = np.linspace(0, simulation_end_time, simulation_end_time + 1)
+    mean_sum = timeseries_tools.time_series_mean(sum_queue_lengths, x)
+    median_sum = timeseries_tools.time_series_quantile(sum_queue_lengths, x, 0.5)
+    quartile_1_sum = timeseries_tools.time_series_quantile(sum_queue_lengths, x, 0.25)
+    quartile_3_sum = timeseries_tools.time_series_quantile(sum_queue_lengths, x, 0.75)
+
+    plt.plot(x, median_sum, label='Overall queue length median')
+    plt.fill_between(x, quartile_1_sum, quartile_3_sum, alpha=0.2)
+    plt.plot(x, mean_sum, label='Overall queue length mean')
+
+    plt.legend()
+    plt.show()
+
+    fig, ax = plt.subplots(nrows=2, sharex=True, sharey=True)
 
     for i, timeseries in enumerate(length_by_queues):
-        x = np.linspace(0, simulation_end_time)
         mean = timeseries_tools.time_series_mean(timeseries, x)
-        ax[0].plot(x, mean, label="Queue length mean")
+        ax[0].plot(x, mean, label=f'Queue {i+1} length mean')
 
         # median
-        mean = timeseries_tools.time_series_quantile(timeseries, x, 0.5)
-        ax[1 + i].plot(x, mean, label="Queue length median")
+        median = timeseries_tools.time_series_quantile(timeseries, x, 0.5)
+        ax[1].plot(x, median, label=f"Queue {i+1} length median")
 
-        # 1. quartile
+        # quartiles
         quartile_1 = timeseries_tools.time_series_quantile(timeseries, x, 0.25)
-        # ax[1].plot(x, quartile_1, label="1. quartile")
-        # 3. quartile
-        quartile_2 = timeseries_tools.time_series_quantile(timeseries, x, 0.75)
-        # ax[1].plot(x, quartile_2, label="3. quartile")
-        ax[1 + i].fill_between(x, quartile_2, quartile_1, color="blue", alpha=0.1)
+        quartile_3 = timeseries_tools.time_series_quantile(timeseries, x, 0.75)
+        ax[1].fill_between(x, quartile_3, quartile_1, alpha=0.2)
 
+    ax[0].legend()
+    ax[1].legend()
     plt.show()
-    # ax[0].legend()
-    # ax[1].legend()
 
 # %%
 
@@ -134,11 +146,11 @@ def plot_queue_activity(queue_activity_data, simulation_end_time):
     for i, timeseries in enumerate(activity_by_queues):
         x = np.linspace(0, simulation_end_time)
         mean = timeseries_tools.time_series_mean(timeseries, x)
-        ax[0].plot(x, mean, label="Queue activity mean")
+        ax[0].plot(x, mean)
 
         # median
-        mean = timeseries_tools.time_series_quantile(timeseries, x, 0.5)
-        ax[1 + i].plot(x, mean, label="Queue activity median")
+        median = timeseries_tools.time_series_quantile(timeseries, x, 0.5)
+        ax[1 + i].plot(x, median, label=f"Queue {i+1} activity median")
 
         # 1. quartile
         quartile_1 = timeseries_tools.time_series_quantile(timeseries, x, 0.25)
@@ -146,9 +158,11 @@ def plot_queue_activity(queue_activity_data, simulation_end_time):
         # 3. quartile
         quartile_2 = timeseries_tools.time_series_quantile(timeseries, x, 0.75)
         # ax[1].plot(x, quartile_2, label="3. quartile")
-        ax[1 + i].fill_between(x, quartile_2, quartile_1, color="blue", alpha=0.1)
+        ax[1 + i].fill_between(x, quartile_2, quartile_1, color="blue", alpha=0.2)
+        ax[i+1].legend()
 
     plt.show()
+
 
 # plot queue activity
 queue_activity_data = [result[4] for result in simulation_results]
@@ -159,21 +173,21 @@ plot_queue_activity(queue_activity_data, simulation_end_time)
 
 
 # print mean and sd of customer waiting time
-# customer_waiting_times = list(itertools.chain.from_iterable([result[2] for result in simulation_results]))
-# print("Customer waiting time:")
-# print(f"\tmean: {np.mean(customer_waiting_times)}")
-# print(f"\tstandard deviation: {np.std(customer_waiting_times, ddof=1)}")
-# print(f"\t1. quartile: {np.quantile(customer_waiting_times, q=0.25)}")
-# print(f"\tmedian: {np.median(customer_waiting_times)}")
-# print(f"\t3. quartile: {np.quantile(customer_waiting_times, q=0.75)}")
-# print()
+customer_waiting_times = list(itertools.chain.from_iterable([result[2] for result in simulation_results]))
+print("Customer waiting time:")
+print(f"\tmean: {np.mean(customer_waiting_times)}")
+print(f"\tstandard deviation: {np.std(customer_waiting_times, ddof=1)}")
+print(f"\t1. quartile: {np.quantile(customer_waiting_times, q=0.25)}")
+print(f"\tmedian: {np.median(customer_waiting_times)}")
+print(f"\t3. quartile: {np.quantile(customer_waiting_times, q=0.75)}")
+print()
 
 # # cashier throughput
-# cashier_throughput = np.array([result[3] for result in simulation_results]).T
-# print("Cashier throughput:")
-# print(f"\tmean: {np.mean(cashier_throughput, axis=1)}")
-# print(f"\tstandard deviation: {np.std(cashier_throughput, axis=1, ddof=1)}")
-# print(f"\t1. quartile: {np.quantile(cashier_throughput, axis=1, q=0.25)}")
-# print(f"\tmedian: {np.median(cashier_throughput, axis=1)}")
-# print(f"\t3. quartile: {np.quantile(cashier_throughput, axis=1, q=0.75)}")
-# print()
+cashier_throughput = np.array([result[3] for result in simulation_results]).T
+print("Cashier throughput:")
+print(f"\tmean: {np.mean(cashier_throughput, axis=1)}")
+print(f"\tstandard deviation: {np.std(cashier_throughput, axis=1, ddof=1)}")
+print(f"\t1. quartile: {np.quantile(cashier_throughput, axis=1, q=0.25)}")
+print(f"\tmedian: {np.median(cashier_throughput, axis=1)}")
+print(f"\t3. quartile: {np.quantile(cashier_throughput, axis=1, q=0.75)}")
+print()

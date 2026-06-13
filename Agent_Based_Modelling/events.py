@@ -6,7 +6,7 @@ class DES:
     """discrete event simulation class;
     manages the event list, runs everything"""
     def __init__(self, start_event):
-        # event_list has to accessed using heapq!
+        # event_list has to be accessed using heapq!
         self.event_list = [start_event]
 
     def push(self, event):

@@ -31,37 +31,28 @@ def simulate(seed, simulation_end_time, service_time, interarr_time, amount_cash
 
 def plot_queue_length_statistics(queue_length_data:list[timeseries_tools.TimeSeriesStepFunction], simulation_end_time, filename=None):
     # plotting
-    fig, ax = plt.subplots(nrows=2, sharex=True, sharey=True)
 
-    for timeseries in queue_length_data:
+    """for timeseries in queue_length_data:
         ax[0].step(timeseries.timepoints, timeseries.values, where='post', color=(0.8, 0.8, 0.8))
         ax[1].step(timeseries.timepoints, timeseries.values, where='post', color=(0.8, 0.8, 0.8), zorder=1)
+"""
 
-    # mean plotting
     x = np.linspace(0, simulation_end_time)
-    mean = timeseries_tools.time_series_mean(queue_length_data, x)
-    ax[0].plot(x, mean, label="Mittelwert der Schlangen-Länge")
-    # ax[0].step(x, mean, label="Queue length mean", where="post")
-
-    # mean +- standard deviation
-    # std_dev = timeseries_tools.time_series_std_deviation(queue_length_data, x)
-    # ax[0].plot(x, mean - std_dev, label="mean - std deviation")
-    # ax[0].plot(x, mean + std_dev, label="mean + std deviation")
 
     # median
-    mean = timeseries_tools.time_series_quantile(queue_length_data, x, 0.5)
-    ax[1].plot(x, mean, label="Median der Schlangen-Länge")
-
+    median = timeseries_tools.time_series_quantile(queue_length_data, x, 0.5)
+    plt.plot(x, median, label="Median der Schlangen-Länge")
     # 1. quartile
     quartile_1 = timeseries_tools.time_series_quantile(queue_length_data, x, 0.25)
-    # ax[1].plot(x, quartile_1, label="1. quartile")
     # 3. quartile
-    quartile_2 = timeseries_tools.time_series_quantile(queue_length_data, x, 0.75)
-    # ax[1].plot(x, quartile_2, label="3. quartile")
-    ax[1].fill_between(x, quartile_2, quartile_1, color="blue", alpha=0.1)
+    quartile_3 = timeseries_tools.time_series_quantile(queue_length_data, x, 0.75)
+    plt.fill_between(x, quartile_3, quartile_1, color="blue", alpha=0.3)
 
-    ax[0].legend()
-    ax[1].legend()
+    # mean plotting
+    mean = timeseries_tools.time_series_mean(queue_length_data, x)
+    plt.plot(x, mean, label="Mittelwert der Schlangen-Länge")
+
+    plt.legend()
 
     if filename is not None:
         plt.savefig(filename)
@@ -77,17 +68,12 @@ def plot_cashiers_busy(cashiers_busy_data, simulation_end_time, filename=None):
     for i in range(amount_cashiers):
         multi_timeseries = cashiers_busy_sorted_by_cashiers[i]
 
-        # for series in multi_timeseries:
-        #     ax[i].step(series.timepoints, series.values, where='post', color=(0.8, 0.8, 0.8))
-
         # 1. quartile
         quartile_1 = timeseries_tools.time_series_quantile(multi_timeseries, x, 0.25)
-        # ax[i].plot(x, quartile_1, label="1. quartile")
 
         # 3. quartile
-        quartile_2 = timeseries_tools.time_series_quantile(multi_timeseries, x, 0.75)
-        # ax[i].plot(x, quartile_2, label="3. quartile")
-        ax[i].fill_between(x, quartile_2, quartile_1, color="blue", alpha=0.1)
+        quartile_3 = timeseries_tools.time_series_quantile(multi_timeseries, x, 0.75)
+        ax[i].fill_between(x, quartile_3, quartile_1, color="blue", alpha=0.3)
 
         # median
         median = timeseries_tools.time_series_quantile(multi_timeseries, x, 0.5)
@@ -100,25 +86,36 @@ def plot_cashiers_busy(cashiers_busy_data, simulation_end_time, filename=None):
 
 if __name__=="__main__":
 
-    simulation_end_time = 120
+    simulation_end_time = 240
 
-    # chi chi
-    df1 = 1
+    """# chi chi
+    df1 = 1.3
     df2 = 4
 
     def service_time(customer):
         return np.random.chisquare(df2)
 
     def interarr_time():
-        return np.random.chisquare(df1)
+        return np.random.chisquare(df1)"""
+
+    # exp chi
+    scale_arr = 1.2
+    df2 = 4
+
+    def service_time(customer):
+        return np.random.chisquare(df2)
+
+    def interarr_time():
+        return np.random.exponential(scale_arr)
 
     # generate simulation seeds
     np.random.seed(17)
-    simulation_size = 30
+    simulation_size = 5000
     seeds = np.random.randint(2**31, size=simulation_size)
+    k = 4
 
     # run Monte Carlo simulation
-    simulation_results = list(map(lambda seed: simulate(seed, simulation_end_time, service_time, interarr_time), seeds))
+    simulation_results = list(map(lambda seed: simulate(seed, simulation_end_time, service_time, interarr_time, k), seeds))
 
     # plot queue length
     queue_length_data = [result[0] for result in simulation_results]
