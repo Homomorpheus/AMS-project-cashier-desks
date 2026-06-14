@@ -41,6 +41,12 @@ def read_call_center_data():
 
     return call_started, call_answered, call_ended, data
 
+def verify_first_come_first_serve(call_started, call_answered):
+    sort_indices_start = np.argsort(call_started)
+    sort_indices_answer = np.argsort(call_answered)
+
+    print(np.sum(sort_indices_start != sort_indices_answer))
+
 
 def start_time_inference(call_started, data):
     "inference on the time between new calls"
@@ -65,9 +71,13 @@ def start_time_inference(call_started, data):
     print(f"result of linear regression: y = {coeffs[0]} + x * {coeffs[1]}")
     # result of linear regression: y = 253.90623376949912 + x * -0.4986322147377886
 
-    plt.plot(date_indices, daily_mean_interarrival)
-    plt.plot(date_indices, coeffs[0] + coeffs[1] * np.array(date_indices))
+    fig, ax = plt.subplots()
+    ax.plot(date_indices, daily_mean_interarrival, label="Mittlere Zeit zwischen Ankünften am Tag")
+    ax.plot(date_indices, coeffs[0] + coeffs[1] * np.array(date_indices), label="Least-squares-fit")
+    ax.set_xlabel("Arbeitstag")
+    ax.legend()
     plt.show()
+    fig.savefig("plots/arrival_data_yeartime.pdf")
 
     # rescale to day indices 1,...,365
     A = np.array([[1., 1.],
@@ -91,8 +101,11 @@ def processing_time_data_exploration_throughout_year(call_answered, call_ended):
             print(f"day {call_answered[i].date()}")
 
     # reveals independence
-    plt.plot(days, processing_times)
-    plt.show()
+    fig, ax = plt.subplots()
+    ax.plot(days, processing_times)
+    fig.show()
+    fig.savefig("plots/processing_time_year.pdf")
+
 
 def processing_time_data_exploration_throughout_day(call_answered, call_ended, data):
     processing_times = []
@@ -119,13 +132,50 @@ def processing_time_data_exploration_throughout_day(call_answered, call_ended, d
 
 
     # reveals drop at end of day
-    plt.plot(minute_times, per_minute_processing_times)
+    fig, ax = plt.subplots()
+    ax.plot(minute_times, per_minute_processing_times)
+    ax.set_xlabel("Minute des Tages")
+    ax.set_ylabel("Mittlere Bearbeitungsdauer,\ninnerhalb einer Minute des Tages")
     plt.show()
+    fig.savefig("plots/processing_time_day.pdf")
     print(np.max(minute_times)/ 24)
+
+def interarrival_data_exploration_throughout_day(call_started):
+    interarrival_times = []
+    day_times = []
+    for i in range(1, len(call_started)):
+        interarrival_times.append((call_started[i] - call_started[i - 1]).total_seconds())
+        day_times.append(call_started[i].time())
+
+    sort_indices = np.argsort(day_times)
+    interarrival_times = [interarrival_times[i] for i in sort_indices]
+    day_times = [day_times[i] for i in sort_indices]
+
+    # merge data so that matplotlib has less to plot
+    per_minute_interarr_times = []
+    minute_times = []
+    current_interarr_times = []
+    for i in range(len(day_times)):
+        current_interarr_times.append(interarrival_times[i])
+        if i == len(day_times) - 1 or day_times[i].hour != day_times[i + 1].hour or day_times[i].minute != day_times[i + 1].minute:
+            per_minute_interarr_times.append(np.mean(current_interarr_times))
+            current_interarr_times = []
+            minute_times.append(day_times[i].hour*60 + day_times[i].minute)
+            print(f"time {day_times[i]}")
+
+    fig, ax = plt.subplots()
+    print(per_minute_interarr_times)
+    ax.semilogy(minute_times, per_minute_interarr_times)
+    ax.set_xlabel("Minute des Tages")
+    ax.set_ylabel("Mittlere Dauer zwischen Starts von Anrufen,\ninnerhalb einer Minute des Tages")
+    fig.savefig("plots/arrival_data_daytime.pdf")
+    plt.show()
+
 
 if __name__=="__main__":
     call_started, call_answered, call_ended, data = read_call_center_data()
-    # start_time_inference(call_started, data)
-    # processing_time_data_exploration_throughout_year(call_answered, call_ended)
-    # processing_time_data_exploration_throughout_day(call_answered, call_ended)
+    interarrival_data_exploration_throughout_day(call_started)
+    verify_first_come_first_serve(call_started, call_answered)
+    start_time_inference(call_started, data)
+    processing_time_data_exploration_throughout_year(call_answered, call_ended)
     processing_time_data_exploration_throughout_day(call_started, call_ended, data)

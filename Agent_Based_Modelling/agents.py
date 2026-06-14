@@ -18,15 +18,25 @@ class Cashier:
     # whether to keep track of changes in how many cashiers are busy
     log = True
 
-    def __init__(self, service_time, properties:dict = dict(), busy = False, time = 0.):
+    def __init__(self, service_time, properties:dict = dict(), busy = False,
+                 time = 0., active=True, threshold_lo=float("-inf"),
+                 threshold_hi=float("inf"), time_to_activate=lambda: 0):
         self.service_time = service_time
         self.properties = properties
         self._busy = busy
+        self._active = active
+        self.reactivation_in_progress = False
+        self.threshold_lo = threshold_lo
+        self.threshold_hi = threshold_hi
+        assert threshold_lo < threshold_hi
+        self.time_to_activate = time_to_activate
 
         if self.log:
             self.timepoints = [time]
             self.busy_at_time = [self._busy]
             self.end_service_timepoints = []
+            self.timepoints_activity_states = [time]
+            self.activity_states = [active]
 
     def get_busy(self):
         "is the cashier busy?"
@@ -58,6 +68,17 @@ class Cashier:
         # "velocity"
         customer_throughput = len(restricted_service_end_times) / (end_time - start_time)
         return customer_throughput
+
+    def get_active(self):
+        return self._active
+
+    def set_active(self, boolean, time):
+        if self._active != boolean:
+            self._active = boolean
+
+            if self.log:
+                self.timepoints_activity_states.append(time)
+                self.activity_states.append(boolean)
 
     def __str__(self):
         return f"Cashier which is {'not ' if not self._busy else '' }busy, with properties {self.properties}"
@@ -109,7 +130,7 @@ class Queue:
         """find a cashier that is not busy;
         return 'busy' if such a cashier does not exist"""
         for cashier in self.cashiers:
-            if not cashier.get_busy():
+            if (not cashier.get_busy()) and cashier.get_active():
                 return cashier
         else:
             return "busy"
@@ -147,6 +168,7 @@ class Queue:
     def set_active(self, boolean, time):
         if self._active != boolean:
             self._active = boolean
+            print(f"set {"in" if not boolean else ""}active")
             if self.log:
                 self.timepoints_activity_states.append(time)
                 self.activity_states.append(boolean)

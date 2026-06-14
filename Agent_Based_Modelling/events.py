@@ -22,16 +22,15 @@ class DES:
         time = float("-inf")
         while True:
             current_event = self.pop()
-            # if self.event_list[0].scheduled_time < current_event.scheduled_time:
+            # if len(self.event_list) > 0 and self.event_list[0].scheduled_time < current_event.scheduled_time:
             #     breakpoint()
             if current_event.scheduled_time < time:
-                # breakpoint()
+                breakpoint()
                 raise RuntimeError("event list not sorted")
             time = current_event.scheduled_time
             if time > end_time:
                 break
             current_event.execute(self)
-            # print(list(map(lambda event: event.scheduled_time, filter(lambda event: isinstance(event, Arrival), self.event_list))))
 
     def __str__(self):
         return f"Discrete event simulation, with {len(self.event_list)} events in queue"
@@ -118,9 +117,6 @@ class Arrival(Event):
 
     def execute(self, des):
         # add Customer to shortest queue
-        # h, tm = divmod(self.scheduled_time, 60*60)
-        # m, s = divmod(tm, 60)
-        # print(h, m, s)
         """print('Customer arriving')
         print('Current queue lengths:')
         for queue in self.queues:
@@ -155,6 +151,13 @@ class Arrival(Event):
             # schedule StartService
             des.push(StartService(self.scheduled_time, self.queues, next_free_cashier, shortest_queue_index))
 
+        # if necessary, activate another cashier
+        for cashier in chosen_queue.cashiers:
+            if len(chosen_queue.customers) >= cashier.threshold_hi and not cashier.get_active() and not cashier.reactivation_in_progress:
+                cashier_reactivation_time = self.scheduled_time + cashier.time_to_activate()
+                des.push(CashierReactivation(cashier_reactivation_time, cashier, self.queues, shortest_queue_index))
+                cashier.reactivation_in_progress = True
+
         # if necessary, activate another queue
         if len(chosen_queue.customers) >= chosen_queue.threshold_hi:
             self.activate_other_queue(des, chosen_queue)
@@ -177,6 +180,7 @@ class StartService(Event):
 
     def execute(self, des):
         # start service
+        assert self.cashier.get_active()
         self.cashier.set_busy(True, self.scheduled_time)
         if self.customer is None:
             self.customer = self.chosen_queue.remove_customer(time = self.scheduled_time)
@@ -192,9 +196,8 @@ class StartService(Event):
 
         # schedule end of service
         service_duration = self.cashier.service_time(self.customer)
+        assert service_duration >= 0
         end_service_time = self.scheduled_time + service_duration
-        if end_service_time > 18*60*60:
-            breakpoint()
         des.push(EndService(end_service_time, self.queues, self.cashier, self.chosen_queue_index))
 
     def __str__(self):
@@ -210,18 +213,28 @@ class EndService(Event):
         self.chosen_queue_index = chosen_queue_index
 
     def execute(self, des):
+
         # free the cashier
         self.cashier.set_busy(False, self.scheduled_time)
 
-        # if possible, immediately serve next customer;
-        # the next customer is taken out of the queue so that
-        # it does not disappear until StartService
-        next_customer = self.queues[self.chosen_queue_index].remove_customer(time = self.scheduled_time)
-        if next_customer != "empty":
-            des.push(StartService(self.scheduled_time, self.queues, self.cashier,
-                                  chosen_queue_index=self.chosen_queue_index,
-                                  customer=next_customer
-                                  ))
+        # if not self.cashier.get_active():
+        #     breakpoint()
+        assert self.cashier.get_active()
+
+        if len(self.queues[self.chosen_queue_index].customers) <= self.cashier.threshold_lo:
+            self.cashier.set_active(False, self.scheduled_time)
+
+        else:
+            assert self.cashier.get_active()
+            # if possible, immediately serve next customer;
+            # the next customer is taken out of the queue so that
+            # it does not disappear until StartService
+            next_customer = self.queues[self.chosen_queue_index].remove_customer(time = self.scheduled_time)
+            if next_customer != "empty":
+                des.push(StartService(self.scheduled_time, self.queues, self.cashier,
+                                    chosen_queue_index=self.chosen_queue_index,
+                                    customer=next_customer
+                                    ))
 
         if len(self.queues[self.chosen_queue_index].customers) <= self.queues[self.chosen_queue_index].threshold_lo:
             self.queues[self.chosen_queue_index].set_active(False, time=self.scheduled_time)
@@ -232,7 +245,7 @@ class EndService(Event):
 
 class CashierArrival(Event):
     """
-    event for the arrival of the cashier at the cash desk (after inactivity)
+    event for the arrival of the cashier at the cash desk, after inactivity *of the queue*
 
     without this event, an Arrival event could trigger a StartService before the
         cashier has arrived
@@ -264,3 +277,30 @@ class CashierArrival(Event):
 
     def __str__(self):
         return f"CashierArrival event in Queue {self.chosen_queue_index}, scheduled at t = {self.scheduled_time}"
+
+
+class CashierReactivation(Event):
+    """
+    event for the arrival of the cashier at the cash desk, *at an active queue*
+    """
+
+    def __init__(self, scheduled_time, cashier, queues, chosen_queue_index):
+        self.scheduled_time = scheduled_time
+        self.cashier = cashier
+        self.queues = queues
+        self.chosen_queue_index = chosen_queue_index
+        assert cashier in queues[chosen_queue_index].cashiers
+
+    def execute(self, des):
+        assert not self.cashier.get_active()
+        self.cashier.reactivation_in_progress = False
+        self.cashier.set_active(True, self.scheduled_time)
+        # if possible, immediately serve next customer;
+        # the next customer is taken out of the queue so that
+        # it does not disappear until StartService
+        next_customer = self.queues[self.chosen_queue_index].remove_customer(time = self.scheduled_time)
+        if next_customer != "empty":
+            des.push(StartService(self.scheduled_time, self.queues, self.cashier,
+                                  chosen_queue_index=self.chosen_queue_index,
+                                  customer=next_customer
+                                  ))

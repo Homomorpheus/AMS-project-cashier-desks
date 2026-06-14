@@ -1,4 +1,7 @@
 import heapq
+import multiprocessing
+import time
+import os
 
 # import matplotlib.pyplot as plt
 import numpy as np
@@ -150,13 +153,13 @@ def develop_from_best_initial_values(amount_initial_values, save=True):
     final_params = np.zeros_like(parameter_sets)
     final_param_values = np.zeros(amount_initial_values)
     for i in range(amount_initial_values):
-        final_params[i] = sa.sa_pos(target, parameter_sets[i], c=0.5, first_step_magnitude_low=7, amount_iterations=20, gradient_mean_size=3, eps=np.array([1, 0., 1, 0.]), param_switch=3)
+        final_params[i] = sa.sa_pos_adaptive(target, parameter_sets[i], c=0.5, first_step_magnitude_low=7, amount_iterations=500, gradient_mean_size=3, eps=np.array([1, 0., 1, 0.]), param_switch=3)
         final_param_values[i] = np.mean([target(final_params[i]) for _ in range(10)])
         print(f"attempt {i + 1}/{amount_initial_values} finished --------------------------------------------- ")
 
     print(final_params)
     print(final_param_values)
-    sort_indices = np.argsort(final_param_values)[::-1]
+    sort_indices = np.argsort(final_param_values)
     final_params = final_params[sort_indices]
     final_param_values = final_param_values[sort_indices]
     print(final_params)
@@ -164,7 +167,6 @@ def develop_from_best_initial_values(amount_initial_values, save=True):
 
     if save:
         np.savetxt("parameters_best.csv", np.hstack((final_param_values[:, None], final_params)))
-
 
 
 if __name__=="__main__":
@@ -207,10 +209,13 @@ if __name__=="__main__":
         # [2.5,   0., 2.5, 0.] (err 13 mio)
 
 
-    opt = sa.sa_pos_adaptive(target, np.array([1.0e+03,1.0e+03,1.000000000000000056e-01,1.000000000000000056e-01]), c=0.5, first_step_magnitude_low=7, amount_iterations=500, gradient_mean_size=3, eps=np.array([1, 0., 1, 0.]), param_switch=3)
-    print(opt)
+    # BEST SO FAR:
+    # opt = sa.sa_pos_adaptive(target, np.array([1.0e+03,1.0e+03,1.000000000000000056e-01,1.000000000000000056e-01]), c=0.5, first_step_magnitude_low=7, amount_iterations=500, gradient_mean_size=3, eps=np.array([1, 0., 1, 0.]), param_switch=3)
+    # print(opt)
+    #
+
     # try_out_initial_values()
-    # develop_from_best_initial_values(5)
+    develop_from_best_initial_values(5)
 
 
 
