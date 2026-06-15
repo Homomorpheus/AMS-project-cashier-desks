@@ -1,6 +1,7 @@
 import itertools
 import numpy as np
 import matplotlib.pyplot as plt
+from pathlib import Path
 
 import agents
 import events
@@ -119,11 +120,11 @@ if __name__=="__main__":
 
     # plot queue length
     queue_length_data = [result[0] for result in simulation_results]
-    plot_queue_length_statistics(queue_length_data, simulation_end_time, filename="plots/mc_statistics_queue_length.pdf")
+    plot_queue_length_statistics(queue_length_data, simulation_end_time, filename=Path("plots") / Path("mc_statistics_queue_length.pdf"))
 
     # plot how busy the cashiers are
     cashiers_busy_data = [result[1] for result in simulation_results]
-    plot_cashiers_busy(cashiers_busy_data, simulation_end_time, filename="plots/mc_statistics_cashiers_busy.pdf")
+    plot_cashiers_busy(cashiers_busy_data, simulation_end_time, filename=Path("plots") / Path("mc_statistics_cashiers_busy.pdf"))
 
     # print mean and sd of customer waiting time
     customer_waiting_times = list(itertools.chain.from_iterable([result[2] for result in simulation_results]))

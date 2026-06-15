@@ -1,6 +1,7 @@
 # %%
 
 import time
+import itertools
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -220,14 +221,14 @@ plot_cashiers_busy(cashiers_busy_data, simulation_start_time, simulation_end_tim
 
 
 # print mean and sd of customer waiting time
-# customer_waiting_times = list(itertools.chain.from_iterable([result[2] for result in simulation_results]))
-# print("Customer waiting time:")
-# print(f"\tmean: {np.mean(customer_waiting_times)}")
-# print(f"\tstandard deviation: {np.std(customer_waiting_times, ddof=1)}")
-# print(f"\t1. quartile: {np.quantile(customer_waiting_times, q=0.25)}")
-# print(f"\tmedian: {np.median(customer_waiting_times)}")
-# print(f"\t3. quartile: {np.quantile(customer_waiting_times, q=0.75)}")
-# print()
+customer_waiting_times = list(itertools.chain.from_iterable([result[2][0] for result in simulation_results]))
+print("Customer waiting time:")
+print(f"\tmean: {np.mean(customer_waiting_times)}")
+print(f"\tstandard deviation: {np.std(customer_waiting_times, ddof=1)}")
+print(f"\t1. quartile: {np.quantile(customer_waiting_times, q=0.25)}")
+print(f"\tmedian: {np.median(customer_waiting_times)}")
+print(f"\t3. quartile: {np.quantile(customer_waiting_times, q=0.75)}")
+print()
 
 # # cashier throughput
 # cashier_throughput = np.array([result[3] for result in simulation_results]).T

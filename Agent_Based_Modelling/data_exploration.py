@@ -6,6 +6,7 @@ does not depend on the cash desk and its queue.
 
 import csv
 import datetime
+from pathlib import Path
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -77,7 +78,7 @@ def start_time_inference(call_started, data):
     ax.set_xlabel("Arbeitstag")
     ax.legend()
     plt.show()
-    fig.savefig("plots/arrival_data_yeartime.pdf")
+    fig.savefig(Path("plots") / Path("arrival_data_yeartime.pdf"))
 
     # rescale to day indices 1,...,365
     A = np.array([[1., 1.],
@@ -104,7 +105,7 @@ def processing_time_data_exploration_throughout_year(call_answered, call_ended):
     fig, ax = plt.subplots()
     ax.plot(days, processing_times)
     fig.show()
-    fig.savefig("plots/processing_time_year.pdf")
+    fig.savefig(Path("plots") / Path("processing_time_year.pdf"))
 
 
 def processing_time_data_exploration_throughout_day(call_answered, call_ended, data):
@@ -137,7 +138,7 @@ def processing_time_data_exploration_throughout_day(call_answered, call_ended, d
     ax.set_xlabel("Minute des Tages")
     ax.set_ylabel("Mittlere Bearbeitungsdauer,\ninnerhalb einer Minute des Tages")
     plt.show()
-    fig.savefig("plots/processing_time_day.pdf")
+    fig.savefig(Path("plots") / Path("processing_time_day.pdf"))
     print(np.max(minute_times)/ 24)
 
 def interarrival_data_exploration_throughout_day(call_started):
@@ -168,7 +169,7 @@ def interarrival_data_exploration_throughout_day(call_started):
     ax.semilogy(minute_times, per_minute_interarr_times)
     ax.set_xlabel("Minute des Tages")
     ax.set_ylabel("Mittlere Dauer zwischen Starts von Anrufen,\ninnerhalb einer Minute des Tages")
-    fig.savefig("plots/arrival_data_daytime.pdf")
+    fig.savefig(Path("plots") / Path("arrival_data_daytime.pdf"))
     plt.show()
 
 

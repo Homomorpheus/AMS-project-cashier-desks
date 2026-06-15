@@ -1,6 +1,7 @@
 # %%
 
 import time
+import itertools
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -65,7 +66,7 @@ def simulate(simulation_end_time, interarr_time, amount_cashiers):
     "run the actual, single simulation"
 
     # create cashier agents, customer agents, and the queue
-    cashiers = [agents.Cashier(service_time=lambda: None, active=False, threshold_lo=i/2, threshold_hi=i/2 + 1, time_to_activate=time_to_activate) for i in range(amount_cashiers)]
+    cashiers = [agents.Cashier(service_time=lambda: None, active=False, threshold_lo=i/2, threshold_hi=i/2 + 1, time_to_activate=time_to_activate, time=simulation_start_time) for i in range(amount_cashiers)]
     cashiers[0].set_active(True, simulation_start_time)
     # cashiers = [agents.Cashier(service_time=lambda: None) for _ in range(amount_cashiers)]
     queues = [agents.Queue(cashiers, [])]
@@ -111,17 +112,16 @@ def plot_multi_queue_length_statistics(queue_length_data, simulation_start_time,
     amount_queues = len(queue_length_data[0])
     length_by_queues = [[result[i] for result in queue_length_data] for i in range(amount_queues)]
 
-    fig, ax = plt.subplots(nrows=1 + amount_queues, sharex=True, sharey=True)
+    fig, ax = plt.subplots(nrows=amount_queues, sharex=True, sharey=True)
+    if amount_queues ==  1:
+        ax = [ax]
 
     for i, timeseries in enumerate(length_by_queues):
         x = np.linspace(simulation_start_time, simulation_end_time)
 
-        mean = timeseries_tools.time_series_mean(timeseries, x)
-        ax[0].plot(x, mean, label="Queue length mean")
-
         # median
         mean = timeseries_tools.time_series_quantile(timeseries, x, 0.5)
-        ax[1 + i].plot(x, mean, label="Queue length median")
+        ax[i].plot(x, mean, label="Queue length median")
 
         # 1. quartile
         quartile_1 = timeseries_tools.time_series_quantile(timeseries, x, 0.25)
@@ -129,7 +129,10 @@ def plot_multi_queue_length_statistics(queue_length_data, simulation_start_time,
         # 3. quartile
         quartile_2 = timeseries_tools.time_series_quantile(timeseries, x, 0.75)
         # ax[1].plot(x, quartile_2, label="3. quartile")
-        ax[1 + i].fill_between(x, quartile_2, quartile_1, color="blue", alpha=0.1)
+        ax[i].fill_between(x, quartile_2, quartile_1, color="blue", alpha=0.1)
+
+        mean = timeseries_tools.time_series_mean(timeseries, x)
+        ax[i].plot(x, mean, label="Queue length mean")
 
     plt.show()
     # ax[0].legend()
@@ -159,16 +162,14 @@ def plot_cashier_activity(cashier_activity_data, simulation_start_time, simulati
     # restructure by cashier
     activity_by_cashiers = [[result[i] for result in cashier_activity_data] for i in range(amount_cashiers)]
 
-    fig, ax = plt.subplots(nrows=1 + amount_cashiers, sharex=True, sharey=True)
+    fig, ax = plt.subplots(nrows=amount_cashiers, sharex=True, sharey=True)
 
     for i, timeseries in enumerate(activity_by_cashiers):
         x = np.linspace(simulation_start_time, simulation_end_time)
-        mean = timeseries_tools.time_series_mean(timeseries, x)
-        ax[0].plot(x, mean, label="Cashier activity mean")
 
         # median
         mean = timeseries_tools.time_series_quantile(timeseries, x, 0.5)
-        ax[1 + i].plot(x, mean, label="Cashier activity median")
+        ax[i].plot(x, mean, label="Cashier activity median")
 
         # 1. quartile
         quartile_1 = timeseries_tools.time_series_quantile(timeseries, x, 0.25)
@@ -176,7 +177,10 @@ def plot_cashier_activity(cashier_activity_data, simulation_start_time, simulati
         # 3. quartile
         quartile_2 = timeseries_tools.time_series_quantile(timeseries, x, 0.75)
         # ax[1].plot(x, quartile_2, label="3. quartile")
-        ax[1 + i].fill_between(x, quartile_2, quartile_1, color="blue", alpha=0.1)
+        ax[i].fill_between(x, quartile_2, quartile_1, color="blue", alpha=0.1)
+
+        mean = timeseries_tools.time_series_mean(timeseries, x)
+        ax[i].plot(x, mean, label="Cashier activity mean")
 
     plt.show()
 
@@ -211,8 +215,8 @@ def plot_cashiers_busy(cashier_business_data, simulation_start_time, simulation_
     plt.show()
 
 # plot how busy the cashiers are
-cashiers_busy_data = [result[1] for result in simulation_results]
-plot_cashiers_busy(cashiers_busy_data, simulation_start_time, simulation_end_time)
+# cashiers_busy_data = [result[1] for result in simulation_results]
+# plot_cashiers_busy(cashiers_busy_data, simulation_start_time, simulation_end_time)
 
 
 
@@ -220,14 +224,33 @@ plot_cashiers_busy(cashiers_busy_data, simulation_start_time, simulation_end_tim
 
 
 # print mean and sd of customer waiting time
-# customer_waiting_times = list(itertools.chain.from_iterable([result[2] for result in simulation_results]))
-# print("Customer waiting time:")
-# print(f"\tmean: {np.mean(customer_waiting_times)}")
-# print(f"\tstandard deviation: {np.std(customer_waiting_times, ddof=1)}")
-# print(f"\t1. quartile: {np.quantile(customer_waiting_times, q=0.25)}")
-# print(f"\tmedian: {np.median(customer_waiting_times)}")
-# print(f"\t3. quartile: {np.quantile(customer_waiting_times, q=0.75)}")
-# print()
+customer_waiting_times = list(itertools.chain.from_iterable([result[2][0] for result in simulation_results]))
+print(customer_waiting_times[0])
+print("Customer waiting time:")
+print(f"\tmean: {np.mean(customer_waiting_times)}")
+print(f"\tstandard deviation: {np.std(customer_waiting_times, ddof=1)}")
+print(f"\t1. quartile: {np.quantile(customer_waiting_times, q=0.25)}")
+print(f"\tmedian: {np.median(customer_waiting_times)}")
+print(f"\t3. quartile: {np.quantile(customer_waiting_times, q=0.75)}")
+print()
+
+# total inactivity time
+# total_inactivity_times = []
+# for cashiers_activity in [data[4] for data in simulation_results]:
+#     per_sim_inactivity = 0
+#     for individual_activity in cashiers_activity:
+#         # check validity
+#         for i in range(1, len(individual_activity.values)):
+#             assert individual_activity.values[i] == (not individual_activity.values[i - 1])
+#         assert individual_activity.values[0] == simulation_start_time
+#         if individual_activity.values[0] == 1:
+#             per_sim_inactivity += sum()
+#         elif individual_activity.values[0] == 0:
+#             ...?
+#         else:
+#             raise RuntimeError
+#     total_inactivity_times.append(per_sim_inactivity)
+
 
 # # cashier throughput
 # cashier_throughput = np.array([result[3] for result in simulation_results]).T

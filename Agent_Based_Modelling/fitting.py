@@ -2,6 +2,7 @@ import heapq
 import multiprocessing
 import time
 import os
+from pathlib import Path
 
 # import matplotlib.pyplot as plt
 import numpy as np
@@ -25,8 +26,8 @@ def service_duration(customer, params, queue, all_service_durations):
     # needs queue length
     shape_no_queue, shape_slope, scale_no_queue, scale_slope = params
     queue_len = len(queue.customers)
-    duration = np.random.gamma(shape = shape_no_queue + queue_len * shape_slope,
-                               scale = scale_no_queue + queue_len * scale_slope,
+    duration = np.random.gamma(shape = shape_no_queue + shape_slope ** (-queue_len),
+                               scale = scale_no_queue + scale_slope ** (-queue_len),
                               )
 
     # account for fact that call cannot go beyond 18:00
@@ -112,20 +113,21 @@ def graphical_plot():
     fig = px.scatter_3d(z=np.array(z).ravel(), x=x.ravel(), y=y.ravel())
     # fig.update_layout(autosize=False, width=500, height=500)
     fig.show()
-    fig.write_html("plots/fitting_objective.html")
+    fig.write_html(Path("plots") / Path("fitting_objective.html"))
 
 
 def try_out_initial_values(mean_size=1, save=True):
     shape_intercept = np.hstack((np.logspace(-1, 3, 5), 0))
-    shape_slope = np.hstack((np.logspace(-1, 3, 5), 0))
+    shape_slope = np.logspace(-1, 3, 5)
     scale_intercept = np.hstack((np.logspace(-1, 3, 5), 0))
-    scale_slope = np.hstack((np.logspace(-1, 3, 5), 0))
+    scale_slope = np.logspace(-1, 3, 5)
 
     shape_intercept, shape_slope, scale_intercept, scale_slope = np.meshgrid(shape_intercept, shape_slope, scale_intercept, scale_slope)
     shape_intercept = shape_intercept.ravel()
     shape_slope = shape_slope.ravel()
     scale_intercept = scale_intercept.ravel()
     scale_slope = scale_slope.ravel()
+
 
     values_target = np.zeros_like(shape_intercept)
     for i in range(len(shape_intercept)):
@@ -146,9 +148,9 @@ def try_out_initial_values(mean_size=1, save=True):
         np.savetxt("parameter_explore.csv", result, delimiter=",")
 
 
-def develop_from_best_initial_values(amount_initial_values, save=True):
+def develop_from_best_initial_values(amount_initial_values=5, save=True):
+    np.random.seed(43)
     parameter_sets = np.loadtxt("parameter_explore.csv", delimiter=",")[:amount_initial_values, 1:]
-    print(parameter_sets)
 
     final_params = np.zeros_like(parameter_sets)
     final_param_values = np.zeros(amount_initial_values)
@@ -157,13 +159,9 @@ def develop_from_best_initial_values(amount_initial_values, save=True):
         final_param_values[i] = np.mean([target(final_params[i]) for _ in range(10)])
         print(f"attempt {i + 1}/{amount_initial_values} finished --------------------------------------------- ")
 
-    print(final_params)
-    print(final_param_values)
     sort_indices = np.argsort(final_param_values)
     final_params = final_params[sort_indices]
     final_param_values = final_param_values[sort_indices]
-    print(final_params)
-    print(final_param_values)
 
     if save:
         np.savetxt("parameters_best.csv", np.hstack((final_param_values[:, None], final_params)))
@@ -219,8 +217,8 @@ if __name__=="__main__":
 
 
 
-    import scipy as sc
-    res = sc.optimize.dual_annealing(lambda x, *args: target(x), [(0.1, 1000), (0, 50), (0.1, 1000), (0, 50)], maxiter=5)
-    print(res.x)
-    print(res.fun)
-    print(res.message)
+    # import scipy as sc
+    # res = sc.optimize.dual_annealing(lambda x, *args: target(x), [(0.1, 1000), (0, 50), (0.1, 1000), (0, 50)], maxiter=5)
+    # print(res.x)
+    # print(res.fun)
+    # print(res.message)
