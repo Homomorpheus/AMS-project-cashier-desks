@@ -2,6 +2,7 @@
 
 import time
 import itertools
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -27,10 +28,10 @@ mean_interarr_time = 254.26239964 + day_in_year * -0.35616587
 max_time_to_reactivation = 2 * 60
 mean_time_to_reactivation = 30
 
-shape_no_queue = 1.000000000268730446e+03
-shape_slope = 6.496680292314401760e-08
-scale_no_queue = 2.337070386598759653e-01
-scale_slope = 9.999998500570692062e-02
+shape_no_queue = 1.000318869536092734e+02
+shape_slope = 1.000985912491102425e+01
+scale_no_queue = 1.993325821625839822e+00
+scale_slope = 6.762314887565674226e+00
 
 def interarr_time():
     return np.random.exponential(mean_interarr_time)
@@ -38,8 +39,8 @@ def interarr_time():
 def service_duration(customer, queue):
     # needs queue length
     queue_len = len(queue.customers)
-    duration = np.random.gamma(shape = shape_no_queue + queue_len * shape_slope,
-                               scale = scale_no_queue + queue_len * scale_slope,
+    duration = np.random.gamma(shape = shape_no_queue + shape_slope ** (-queue_len),
+                               scale = scale_no_queue + scale_slope ** (-queue_len),
                               )
 
     # account for fact that call cannot go beyond 18:00
@@ -112,17 +113,16 @@ def plot_multi_queue_length_statistics(queue_length_data, simulation_start_time,
     amount_queues = len(queue_length_data[0])
     length_by_queues = [[result[i] for result in queue_length_data] for i in range(amount_queues)]
 
-    fig, ax = plt.subplots(nrows=1 + amount_queues, sharex=True, sharey=True)
+    fig, ax = plt.subplots(nrows=amount_queues, sharex=True, sharey=True)
+    if amount_queues ==  1:
+        ax = [ax]
 
     for i, timeseries in enumerate(length_by_queues):
         x = np.linspace(simulation_start_time, simulation_end_time)
 
-        mean = timeseries_tools.time_series_mean(timeseries, x)
-        ax[0].plot(x, mean, label="Queue length mean")
-
         # median
         mean = timeseries_tools.time_series_quantile(timeseries, x, 0.5)
-        ax[1 + i].plot(x, mean, label="Queue length median")
+        ax[i].plot(x, mean, label="Median der Schlangenlänge")
 
         # 1. quartile
         quartile_1 = timeseries_tools.time_series_quantile(timeseries, x, 0.25)
@@ -130,9 +130,17 @@ def plot_multi_queue_length_statistics(queue_length_data, simulation_start_time,
         # 3. quartile
         quartile_2 = timeseries_tools.time_series_quantile(timeseries, x, 0.75)
         # ax[1].plot(x, quartile_2, label="3. quartile")
-        ax[1 + i].fill_between(x, quartile_2, quartile_1, color="blue", alpha=0.1)
+        ax[i].fill_between(x, quartile_2, quartile_1, color="blue", alpha=0.1)
+
+        mean = timeseries_tools.time_series_mean(timeseries, x)
+        ax[i].plot(x, mean, label="Mittelwert der Schlangenlänge")
+
+        ax[i].legend()
+
+    ax[-1].set_xlabel("Tageszeit")
 
     plt.show()
+    fig.savefig(Path("plots") / Path("replicated_queue_length.pdf"))
     # ax[0].legend()
     # ax[1].legend()
 
