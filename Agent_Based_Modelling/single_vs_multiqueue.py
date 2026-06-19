@@ -5,6 +5,7 @@ import agents
 import events
 import timeseries_tools
 import time
+from pathlib import Path
 
 start_time = time.time()
 
@@ -130,6 +131,47 @@ def compare_cashiers_busy(cashiers_busy_data_single, cashiers_busy_data_multi, s
         ax[i].legend()
 
 
+def plot_waiting_time_boxplot(simulation_results_singlequeue, simulation_results_multiqueue, filename=None):
+    customer_waiting_times = list(itertools.chain.from_iterable([result[2] for result in simulation_results_singlequeue]))
+    all_customer_waiting_times_multiqueue = [list(itertools.chain.from_iterable(result[2][i] for result in simulation_results_multiqueue)) for i in range(k)]
+
+    fig = plt.figure()
+    gs = fig.add_gridspec(ncols=2, wspace=0, width_ratios=[1, k])
+    ax = gs.subplots(sharey=True)
+
+    ax[0].boxplot(customer_waiting_times, showmeans=True, tick_labels=[""], whis=(0, 100))
+    # ax[0].legend([bpl0["means"][0]], ["Mittelwert"])
+    ax[0].set_ylabel("Wartezeit in Minuten")
+    ax[0].set_xlabel("Einzelne\nSchlange")
+
+    tick_labels = [f"Schlange {i + 1}" for i in range(k)]
+    bpl1 = ax[1].boxplot(all_customer_waiting_times_multiqueue, showmeans=True, tick_labels=tick_labels, whis=(0, 100))
+    ax[1].legend([bpl1["means"][0]], ["Mittelwert"])
+    # ax[1].set_ylabel("Wartezeit in Minuten")
+    ax[1].set_xlabel("Mehrere Schlangen")
+
+    plt.show()
+    if filename is not None:
+        fig.savefig(filename)
+
+
+def plot_cashier_throughput_boxplot(k, cashier_throughput_single, cashier_throughput_multi, filename=None):
+    fig, ax = plt.subplots(nrows=k, sharex=True, figsize=(10, 6))
+    tick_labels = ["Einzelne\nSchlange", "Mehrere\nSchlangen"]
+
+    for i in range(k):
+        bpl = ax[i].boxplot([cashier_throughput_single[i, :], cashier_throughput_multi[i, :]], showmeans=True, tick_labels=tick_labels, whis=(0, 100), vert=False)
+        if i == 0:
+            fig.legend([bpl["means"][0]], ["Mittelwert"], loc="outside right upper")
+        ax[i].set_ylabel(f"Kassier_in {i + 1}")
+
+    ax[-1].set_xlabel("Kunden pro Minute")
+
+    plt.show()
+    if filename is not None:
+        fig.savefig(filename)
+
+
 if __name__=="__main__":
 
     simulation_end_time = 120
@@ -148,7 +190,8 @@ if __name__=="__main__":
     """# exp gamma
     scale_arr = 2  # mean of exp(scale) = scale
     shape_serv = 2
-    scale_serv = 4
+    scale_serv = 3
+    filename_code = "singlevsmulti_1"
 
     def service_time(customer):
         return np.random.gamma(shape_serv, scale_serv)
@@ -164,6 +207,8 @@ if __name__=="__main__":
     # run Monte Carlo simulation
     simulation_results_multiqueue = list(map(lambda seed: simulate_multiqueue(seed, simulation_end_time, service_time, interarr_time, amount_cashiers=k), seeds))
     simulation_results_singlequeue = list(map(lambda seed: simulate_single_queue(seed, simulation_end_time, service_time, interarr_time, amount_cashiers=k), seeds))
+
+    end_time = time.time()
 
     # plot queue length
     single_queue_length_data = [result[0] for result in simulation_results_singlequeue]
@@ -198,6 +243,8 @@ if __name__=="__main__":
         print(f"\t3. quartile: {np.quantile(customer_waiting_times_multiqueue, q=0.75)}")
         print()
 
+    plot_waiting_time_boxplot(simulation_results_singlequeue, simulation_results_multiqueue, filename=Path("plots") / Path(filename_code + "_waiting_time_boxplot.pdf"))
+
     # cashier throughput
     cashier_throughput_single = np.array([result[3] for result in simulation_results_singlequeue]).T
     print("Cashier throughput in single queue simulation:")
@@ -208,6 +255,7 @@ if __name__=="__main__":
     print(f"\t3. quartile: {np.quantile(cashier_throughput_single, axis=1, q=0.75)}")
     print()
 
+
     cashier_throughput_multi = np.array([result[3] for result in simulation_results_multiqueue]).T
     print("Cashier throughput in multi queue simulation:")
     print(f"\tmean: {np.mean(cashier_throughput_multi, axis=1)}")
@@ -217,7 +265,7 @@ if __name__=="__main__":
     print(f"\t3. quartile: {np.quantile(cashier_throughput_multi, axis=1, q=0.75)}")
     print()
 
-    end_time = time.time()
+    plot_cashier_throughput_boxplot(k, cashier_throughput_single, cashier_throughput_multi, filename=Path("plots") / Path(filename_code + "_throughput_boxplot.pdf"))
 
     print(f"Simulation time: {end_time - start_time}")
 

@@ -1,15 +1,18 @@
 # %%
 
 import time
+import itertools
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
 import agents
 import events
 import timeseries_tools
-import itertools
+import mc_statistics
 
 
-simulation_end_time = 120
+simulation_end_time = 240
 
 # chi chi
 df1 = 2
