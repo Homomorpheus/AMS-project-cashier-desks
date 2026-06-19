@@ -7,7 +7,7 @@ import agents
 import events
 import timeseries_tools
 
-def simulate(seed, simulation_end_time, service_time, interarr_time, amount_cashiers=2):
+def simulate(simulation_end_time, service_time, interarr_time, amount_cashiers=2):
     "run the actual, single simulation"
 
     # create cashier agents, customer agents, and the queue
@@ -38,25 +38,25 @@ def plot_queue_length_statistics(queue_length_data:list[timeseries_tools.TimeSer
         ax[1].step(timeseries.timepoints, timeseries.values, where='post', color=(0.8, 0.8, 0.8), zorder=1)
 """
 
-    x = np.linspace(0, simulation_end_time)
+    x = np.linspace(0, simulation_end_time, simulation_end_time+1)
 
     # median
     median = timeseries_tools.time_series_quantile(queue_length_data, x, 0.5)
-    plt.plot(x, median, label="Median der Schlangen-Länge")
+    plt.plot(x, median, color='tab:blue', label="Median der Schlangen-Länge")
     # 1. quartile
     quartile_1 = timeseries_tools.time_series_quantile(queue_length_data, x, 0.25)
     # 3. quartile
     quartile_3 = timeseries_tools.time_series_quantile(queue_length_data, x, 0.75)
-    plt.fill_between(x, quartile_3, quartile_1, color="blue", alpha=0.3)
+    plt.fill_between(x, quartile_3, quartile_1, color="tab:blue", alpha=0.3)
 
     # mean plotting
     mean = timeseries_tools.time_series_mean(queue_length_data, x)
-    plt.plot(x, mean, label="Mittelwert der Schlangen-Länge")
+    plt.plot(x, mean, color='tab:orange', label="Mittelwert der Schlangen-Länge")
 
     plt.legend()
 
-    if filename is not None:
-        plt.savefig(filename)
+    """if filename is not None:
+        plt.savefig(filename)"""
 
 
 def plot_cashiers_busy(cashiers_busy_data, simulation_end_time, filename=None):
@@ -64,7 +64,7 @@ def plot_cashiers_busy(cashiers_busy_data, simulation_end_time, filename=None):
 
     amount_cashiers = len(cashiers_busy_sorted_by_cashiers)
     fig, ax = plt.subplots(nrows=amount_cashiers, sharex=True, sharey=True)
-    x = np.arange(0, simulation_end_time + 1)
+    x = np.arange(simulation_end_time + 1)
 
     for i in range(amount_cashiers):
         multi_timeseries = cashiers_busy_sorted_by_cashiers[i]
@@ -89,34 +89,45 @@ if __name__=="__main__":
 
     simulation_end_time = 240
 
-    """# chi chi
-    df1 = 1.3
+    # chi chi
+    df1 = 2
+    df2 = 3
+
+    """def service_time(customer):
+        return np.random.chisquare(df2)
+
+    def interarr_time():
+        return np.random.chisquare(df1)
+"""
+    """# exp chi
+    scale_arr = 2
     df2 = 4
 
     def service_time(customer):
         return np.random.chisquare(df2)
 
     def interarr_time():
-        return np.random.chisquare(df1)"""
+        return np.random.exponential(scale_arr)"""
 
-    # exp chi
-    scale_arr = 1.2
-    df2 = 4
-
-    def service_time(customer):
-        return np.random.chisquare(df2)
+    # exp gamma
+    scale_arr = 2
+    shape_serv = 2
+    scale_serv = 3
 
     def interarr_time():
         return np.random.exponential(scale_arr)
 
+    def service_time(customer):
+        return np.random.gamma(shape_serv, scale_serv)
+
     # generate simulation seeds
-    np.random.seed(17)
+    np.random.seed(4627)  # 17
     simulation_size = 5000
     seeds = np.random.randint(2**31, size=simulation_size)
     k = 4
 
     # run Monte Carlo simulation
-    simulation_results = list(map(lambda seed: simulate(seed, simulation_end_time, service_time, interarr_time, k), seeds))
+    simulation_results = [simulate(simulation_end_time, service_time, interarr_time, k) for _ in range(simulation_size)]
 
     # plot queue length
     queue_length_data = [result[0] for result in simulation_results]

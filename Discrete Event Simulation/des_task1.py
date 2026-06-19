@@ -4,7 +4,6 @@
 import heapq
 import numpy as np
 import matplotlib.pyplot as plt
-from bisect import bisect_left
 import sys
 if sys.platform == "win32":
     sys.path.append(r"..\Agent_Based_Modelling")
@@ -13,6 +12,7 @@ elif sys.platform == "linux":
 import timeseries_tools
 
 
+# event class that contains type and scheduled time of the event
 class Event:
 
     def __init__(self, type="arrival", scheduled_time=0.0):
@@ -23,6 +23,7 @@ class Event:
         return self.scheduled_time < other.scheduled_time
 
 
+# run the simulation for given input
 def run_simulation(k, arrival_time, service_time, T):
     event_list = []
     sim_time = 0
@@ -36,9 +37,11 @@ def run_simulation(k, arrival_time, service_time, T):
 
     while event_list[0].scheduled_time < T:
 
+        # get the next planned event from the event list
         current_event = heapq.heappop(event_list)
         sim_time = current_event.scheduled_time
 
+        # run event
         if current_event.type == "start":
             new_arrival = sim_time + arrival_time()
             heapq.heappush(event_list, Event("arrival", new_arrival))
@@ -46,8 +49,10 @@ def run_simulation(k, arrival_time, service_time, T):
             Q_data.append(Q)
             S_data.append(k-S)
 
+        # arrival event
         if current_event.type == "arrival":
             Q += 1
+            # if server available, immediately schedule start service event
             if S > 0:
                 heapq.heappush(event_list, Event("start_service", sim_time))
             new_arrival = sim_time + arrival_time()
@@ -56,27 +61,31 @@ def run_simulation(k, arrival_time, service_time, T):
             Q_data.append(Q)
             S_data.append(k-S)
 
+        # start service event
         if current_event.type == "start_service":
             S -= 1
             Q -= 1
-            if S < 0 or Q < 0:
-                print(f"ERROR S = {S}, Q = {Q}")
+            if Q < 0 or S < 0:
+                raise ValueError(f"Invalid simulation state: Q={Q}, S={S} must be non-negative")
             end_time = sim_time + service_time()
             heapq.heappush(event_list, Event("end_service", end_time))
             timepoints.append(sim_time)
             Q_data.append(Q)
             S_data.append(k-S)
 
+        # end service event
         if current_event.type == "end_service":
             S += 1
             timepoints.append(sim_time)
             Q_data.append(Q)
             S_data.append(k-S)
-            if Q > 0:  # i do not even put SS on the event list, but do it immediately
+            # if a customer is waiting, the server immediately starts service again
+            # to assure the correct order of events, this is done immediatly instead of put on the event list
+            if Q > 0:
                 S -= 1
                 Q -= 1
-                if S < 0 or Q < 0:
-                    print(f"ERROR S = {S}, Q = {Q}")
+                if Q < 0 or S < 0:
+                    raise ValueError(f"Invalid simulation state: Q={Q}, S={S} must be non-negative")
                 end_time = sim_time + service_time()
                 heapq.heappush(event_list, Event("end_service", end_time))
                 timepoints.append(sim_time)
@@ -86,7 +95,7 @@ def run_simulation(k, arrival_time, service_time, T):
     return timepoints, Q_data, S_data
 
 
-# run a given number of Monte Carlo simulations and calculate mean and var of data
+# run a given number of Monte Carlo simulations and calculate statistics
 def MonteCarlo(runs, k, arrival_time, service_time, T):
 
     queue_length_data = []
@@ -102,70 +111,69 @@ def MonteCarlo(runs, k, arrival_time, service_time, T):
 
 
 def plot_statistics(q_data, s_data, T):
-    t_eval = np.linspace(0, T, T+1)
+    t_eval = np.arange(0, T+1)
     queue_length_mean = timeseries_tools.time_series_mean(q_data, t_eval)
     # queue_length_std = timeseries_tools.time_series_std_deviation(q_data, t_eval)
     queue_length_median = timeseries_tools.time_series_quantile(q_data, t_eval, 0.5)
     queue_length_1st_quantile = timeseries_tools.time_series_quantile(q_data, t_eval, 0.25)
     queue_length_3rd_quantile = timeseries_tools.time_series_quantile(q_data, t_eval, 0.75)
 
-    t_eval = np.linspace(0, T, T + 1)
     server_util_mean = timeseries_tools.time_series_mean(s_data, t_eval)
     # server_util_std = timeseries_tools.time_series_std_deviation(s_data, t_eval)
     server_util_median = timeseries_tools.time_series_quantile(s_data, t_eval, 0.5)
     server_util_1st_quantile = timeseries_tools.time_series_quantile(s_data, t_eval, 0.25)
     server_util_3rd_quantile = timeseries_tools.time_series_quantile(s_data, t_eval, 0.75)
 
-    fig, ax = plt.subplots(nrows=2, sharex=True, sharey=True)
+    fig, ax = plt.subplots(nrows=1, sharex=True, sharey=True)
 
-    ax[0].step(t_eval, queue_length_median, label='Queue length median')
-    ax[0].fill_between(t_eval, queue_length_1st_quantile, queue_length_3rd_quantile, step='post', alpha=0.3, label='1st and 3rd quartile')
-    ax[0].plot(t_eval, queue_length_mean, label='Queue length mean')
-    ax[0].legend()
+    ax.step(t_eval, queue_length_median, label='Queue length median')
+    ax.fill_between(t_eval, queue_length_1st_quantile, queue_length_3rd_quantile, step='post', alpha=0.3, label='1st and 3rd quartile')
+    ax.plot(t_eval, queue_length_mean, label='Queue length mean')
+    ax.legend()
 
-    ax[1].plot(t_eval, server_util_median, label='Server utilisation median')
+    """ax[1].plot(t_eval, server_util_median, label='Server utilisation median')
     ax[1].fill_between(t_eval, server_util_1st_quantile, server_util_3rd_quantile, alpha=0.3, label='1st and 3rd quartile')
     ax[1].plot(t_eval, server_util_mean, label='Server utilisation mean')
-    ax[1].legend()
+    ax[1].legend()"""
 
 
-np.random.seed(4627)
-k = 4  # number of servers
+if __name__ == "__main__":
+    np.random.seed(4627)
+    k = 4  # number of servers
 
-"""# exp exp
-scale_arr = 2
-scale_serv = 3  # mean of exp(scale) = scale
-arrival_time = lambda : np.random.exponential(scale_arr)
-service_time = lambda : np.random.exponential(scale_serv)
-"""
+    """# exp exp
+    scale_arr = 2
+    scale_serv = 3  # mean of exp(scale) = scale
+    arrival_time = lambda : np.random.exponential(scale_arr)
+    service_time = lambda : np.random.exponential(scale_serv)
+    """
 
-# gamma gamma. expectation = shape*scale. if shape=1: gives exp(scale)
-shape1 = 1
-scale1 = 2
-shape2 = 2
-scale2 = 4
-arrival_time = lambda : np.random.gamma(shape1, scale1)
-service_time = lambda : np.random.gamma(shape2, scale2)
+    # exp gamma. expectation = shape*scale. if shape=1: gives exp(scale)
+    scale1 = 2
+    shape2 = 2
+    scale2 = 3
+    arrival_time = lambda : np.random.exponential(scale1)
+    service_time = lambda : np.random.gamma(shape2, scale2)
 
 
-"""# chi chi
-df1 = 2
-df2 = 4
-arrival_time = lambda : np.random.chisquare(df1)
-service_time = lambda : np.random.chisquare(df2)
-"""
-T = 240
-"""timepoints, Q_data, S_data = run_simulation(k, arrival_time, service_time, T)
-plt.step(timepoints, Q_data, where='post', label='Queue length')
-plt.step(timepoints, S_data, where='post', label='Server utilisation')
-plt.legend()
-plt.show()"""
+    """# chi chi
+    df1 = 2
+    df2 = 4
+    arrival_time = lambda : np.random.chisquare(df1)
+    service_time = lambda : np.random.chisquare(df2)
+    """
+    T = 240
+    """timepoints, Q_data, S_data = run_simulation(k, arrival_time, service_time, T)
+    plt.step(timepoints, Q_data, where='post', label='Queue length')
+    plt.step(timepoints, S_data, where='post', label='Server utilisation')
+    plt.legend()
+    plt.show()"""
 
-# Monte Carlo Sim
-runs = 5000
-q_data, s_data = MonteCarlo(runs, k, arrival_time, service_time, T)
-plot_statistics(q_data, s_data, T)
-plt.show()
+    # Monte Carlo Sim
+    runs = 5000
+    q_data, s_data = MonteCarlo(runs, k, arrival_time, service_time, T)
+    plot_statistics(q_data, s_data, T)
+    plt.show()
 
 # observed behaviour:
 # 1) we can either get a small variance for server utilisation OR for queue length, not both.

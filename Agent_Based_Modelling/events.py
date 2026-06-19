@@ -184,8 +184,8 @@ class StartService(Event):
         self.cashier.set_busy(True, self.scheduled_time)
         if self.customer is None:
             self.customer = self.chosen_queue.remove_customer(time = self.scheduled_time)
-            if self.customer == "empty":
-                breakpoint()
+            """if self.customer == "empty":
+                breakpoint()"""
             assert self.customer != "empty"
 
         # store waiting time

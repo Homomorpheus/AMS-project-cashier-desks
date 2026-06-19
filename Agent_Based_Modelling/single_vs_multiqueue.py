@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import agents
 import events
 import timeseries_tools
-import heapq
 import time
 
 start_time = time.time()
@@ -133,20 +132,20 @@ def compare_cashiers_busy(cashiers_busy_data_single, cashiers_busy_data_multi, s
 
 if __name__=="__main__":
 
-    simulation_end_time = 240
+    simulation_end_time = 120
 
-    k = 4
-    """# chi chi
-    df1 = 3
-    df2 = 4
+    k = 5
+    # chi chi
+    df1 = 2
+    df2 = 3
 
     def service_time(customer):
         return np.random.chisquare(df2)
 
     def interarr_time():
-        return np.random.chisquare(df1)"""
+        return np.random.chisquare(df1)
 
-    # exp gamma
+    """# exp gamma
     scale_arr = 2  # mean of exp(scale) = scale
     shape_serv = 2
     scale_serv = 4
@@ -155,11 +154,11 @@ if __name__=="__main__":
         return np.random.gamma(shape_serv, scale_serv)
 
     def interarr_time():
-        return np.random.exponential(scale_arr)
+        return np.random.exponential(scale_arr)"""
 
     # generate simulation seeds
     np.random.seed(17)
-    simulation_size = 5000
+    simulation_size =1000
     seeds = np.random.randint(2**31, size=simulation_size)
 
     # run Monte Carlo simulation

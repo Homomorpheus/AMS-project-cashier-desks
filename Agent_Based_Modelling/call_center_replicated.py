@@ -15,7 +15,7 @@ import timeseries_tools
 
 # %%
 
-amount_cashiers = 4
+amount_cashiers = 3
 
 simulation_size = 300
 
@@ -141,9 +141,10 @@ def plot_multi_queue_length_statistics(queue_length_data, simulation_start_time,
     ax[-1].set_xlabel("Tageszeit")
 
     plt.show()
-    fig.savefig(Path("plots") / Path("replicated_queue_length.pdf"))
-    # ax[0].legend()
-    # ax[1].legend()
+
+    # fig.savefig(Path("plots") / Path("replicated_queue_length.pdf"))
+    ax[0].legend()
+    ax[1].legend()
 
 # %%
 
