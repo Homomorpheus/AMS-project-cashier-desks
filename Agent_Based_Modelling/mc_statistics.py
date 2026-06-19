@@ -63,8 +63,29 @@ def plot_cashiers_busy(cashiers_busy_data, simulation_end_time, filename=None):
     cashiers_busy_sorted_by_cashiers = [[cashiers_busy_data[j][i] for j in range(len(cashiers_busy_data))] for i in range(len(cashiers_busy_data[0]))]
 
     amount_cashiers = len(cashiers_busy_sorted_by_cashiers)
+    x = np.linspace(0, simulation_end_time, simulation_end_time + 1)
+
+    fig, ax = plt.subplots()
+    business_tensor = np.array([[result[i].evaluate(x) for result in cashiers_busy_data] for i in range(amount_cashiers)])
+    assert business_tensor.shape[0] == amount_cashiers
+    assert business_tensor.shape[1] == len(cashiers_busy_data)
+    assert business_tensor.shape[2] == len(x)
+    cashiers_summed = np.sum(business_tensor, axis=0)
+
+    mean = np.mean(cashiers_summed, axis=0)
+    median = np.median(cashiers_summed, axis=0)
+    quartile_1 = np.quantile(cashiers_summed, axis=0, q=0.25)
+    quartile_3 = np.quantile(cashiers_summed, axis=0, q=0.75)
+
+    ax.plot(x, median, label="Median", color='tab:blue')
+    ax.fill_between(x, quartile_3, quartile_1, color="tab:blue", alpha=0.3)
+    ax.plot(x, mean, label="Mean", color='tab:orange')
+    plt.title('Overall cashier business')
+    ax.set_ylim(bottom=0)
+    ax.legend()
+    plt.show()
+
     fig, ax = plt.subplots(nrows=amount_cashiers, sharex=True, sharey=True)
-    x = np.arange(simulation_end_time + 1)
 
     for i in range(amount_cashiers):
         multi_timeseries = cashiers_busy_sorted_by_cashiers[i]
@@ -82,8 +103,8 @@ def plot_cashiers_busy(cashiers_busy_data, simulation_end_time, filename=None):
 
         ax[i].legend()
 
-    if filename is not None:
-        plt.savefig(filename)
+    # if filename is not None:
+    #    plt.savefig(filename)
 
 if __name__=="__main__":
 

@@ -124,17 +124,17 @@ def plot_statistics(q_data, s_data, T):
     server_util_1st_quantile = timeseries_tools.time_series_quantile(s_data, t_eval, 0.25)
     server_util_3rd_quantile = timeseries_tools.time_series_quantile(s_data, t_eval, 0.75)
 
-    fig, ax = plt.subplots(nrows=1, sharex=True, sharey=True)
+    plt.step(t_eval, queue_length_median, label='Queue length median')
+    plt.fill_between(t_eval, queue_length_1st_quantile, queue_length_3rd_quantile, step='post', alpha=0.3, label='1st and 3rd quartile')
+    plt.plot(t_eval, queue_length_mean, label='Queue length mean')
+    plt.legend()
+    plt.show()
 
-    ax.step(t_eval, queue_length_median, label='Queue length median')
-    ax.fill_between(t_eval, queue_length_1st_quantile, queue_length_3rd_quantile, step='post', alpha=0.3, label='1st and 3rd quartile')
-    ax.plot(t_eval, queue_length_mean, label='Queue length mean')
-    ax.legend()
-
-    """ax[1].plot(t_eval, server_util_median, label='Server utilisation median')
-    ax[1].fill_between(t_eval, server_util_1st_quantile, server_util_3rd_quantile, alpha=0.3, label='1st and 3rd quartile')
-    ax[1].plot(t_eval, server_util_mean, label='Server utilisation mean')
-    ax[1].legend()"""
+    plt.plot(t_eval, server_util_median, label='Server utilisation median')
+    plt.fill_between(t_eval, server_util_1st_quantile, server_util_3rd_quantile, alpha=0.3, label='1st and 3rd quartile')
+    plt.plot(t_eval, server_util_mean, label='Server utilisation mean')
+    plt.legend()
+    plt.show()
 
 
 if __name__ == "__main__":
@@ -173,7 +173,6 @@ if __name__ == "__main__":
     runs = 5000
     q_data, s_data = MonteCarlo(runs, k, arrival_time, service_time, T)
     plot_statistics(q_data, s_data, T)
-    plt.show()
 
 # observed behaviour:
 # 1) we can either get a small variance for server utilisation OR for queue length, not both.

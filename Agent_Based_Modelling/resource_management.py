@@ -16,8 +16,8 @@ df1 = 2
 df2 = 3
 df3 = 1
 
-amount_cashiers = 2
-simulation_size = 500
+amount_cashiers = 5
+simulation_size = 5000
 
 def service_time(customer):
     return np.random.chisquare(df2)
@@ -35,6 +35,8 @@ def simulate_rm(seed, simulation_end_time, service_time, interarr_time, amount_c
     # create cashier agents, customer agents, and the queue
     cashiers = [agents.Cashier(service_time) for _ in range(amount_cashiers)]
     queues = [agents.Queue([cashier], [], threshold_lo=0, threshold_hi=3, time_to_activate=time_to_activate, active=False) for cashier in cashiers]
+    queues[0]._active = True
+    queues[0].threshold_lo = float("-inf")
 
     # create initial event
     start_event = events.Arrival(scheduled_time=0., interarr_time=interarr_time, queues=queues)
