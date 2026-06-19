@@ -2,6 +2,7 @@ import heapq
 import multiprocessing
 import time
 import os
+import datetime
 from pathlib import Path
 
 # import matplotlib.pyplot as plt
@@ -22,13 +23,17 @@ call_started, call_answered, call_ended, data = data_exploration.read_call_cente
 service_times_actual = [(call_ended[i] - call_answered[i]).total_seconds() for i in range(len(call_answered))]
 service_times_actual = np.array(service_times_actual)
 
-def service_duration(customer, params, queue, all_service_durations):
+midnights = [datetime.datetime.combine(call_ended[i].date(), datetime.time(0, 0, 0)) for i in range(len(call_answered))]
+end_times_actual = [(call_ended[i] - midnights[i]).total_seconds() for i in range(len(call_answered))]
+end_times_actual = np.array(end_times_actual)
+
+def service_duration(customer, params, queue, all_service_durations, all_service_end_times):
     # needs queue length
     shape_no_queue, shape_slope, scale_no_queue, scale_slope = params
     queue_len = len(queue.customers)
-    duration = np.random.gamma(shape = shape_no_queue + shape_slope ** (-queue_len),
-                               scale = scale_no_queue + scale_slope ** (-queue_len),
-                              )
+    duration = np.random.gamma(shape = shape_no_queue + shape_slope / (queue_len + 1),
+                                scale = scale_no_queue + scale_slope / (queue_len + 1),
+                            )
 
     # account for fact that call cannot go beyond 18:00
     if customer.start_service_time + duration >= (18 * 60 * 60 - 1):
@@ -36,6 +41,7 @@ def service_duration(customer, params, queue, all_service_durations):
         duration = 18 * 60 * 60 - customer.start_service_time - 1
 
     all_service_durations[customer.properties["caller number"]] = duration
+    all_service_end_times[customer.properties["caller number"]] = customer.start_service_time + duration
     return duration
 
 def daily_simulation(params, data_index_lo, data_index_hi):
@@ -52,8 +58,9 @@ def daily_simulation(params, data_index_lo, data_index_hi):
 
     # correct cashier.service_time, which depends on queue
     all_service_durations = dict()
+    all_service_end_times = dict()
     for cashier in cashiers:
-        cashier.service_time = lambda customer: service_duration(customer, params, queues[0], all_service_durations)
+        cashier.service_time = lambda customer: service_duration(customer, params, queues[0], all_service_durations, all_service_end_times)
 
     # create all arrival events from data
     # the arrival events spawned by these will never happen
@@ -75,8 +82,10 @@ def daily_simulation(params, data_index_lo, data_index_hi):
     des.run(simulation_end_time)
 
     all_service_durations = [all_service_durations[index] for index in sorted(all_service_durations.keys())]
+    all_service_end_times = [all_service_end_times[index] for index in sorted(all_service_end_times.keys())]
     assert len(all_service_durations) == data_index_hi - data_index_lo
-    return all_service_durations
+    assert len(all_service_end_times) == data_index_hi - data_index_lo
+    return all_service_durations, all_service_end_times
 
 def target(params):
     "function to be minimized"
@@ -86,10 +95,10 @@ def target(params):
     for i in range(len(call_answered)):
         if i == len(call_answered) - 1 or call_answered[i].date() != call_answered[i + 1].date():
             data_index_hi = i + 1
-            daily_service_times_simulated = daily_simulation(params, data_index_lo, data_index_hi)
+            daily_service_times_simulated, _ = daily_simulation(params, data_index_lo, data_index_hi)
             service_times_simulated[data_index_lo:data_index_hi] = np.array(daily_service_times_simulated)
 
-            data_index_lo = i + 1
+            data_index_lo = i + 12.132396556419758893e-01
 
     print("yearly run complete")
 
@@ -167,6 +176,26 @@ def develop_from_best_initial_values(amount_initial_values=5, save=True):
         np.savetxt("parameters_best.csv", np.hstack((final_param_values[:, None], final_params)))
 
 
+def end_timepoint_validation(params, num_iterations = 20):
+    np.random.seed(17)
+    total_err = 0
+    for i in range(num_iterations):
+        end_times_simulated = np.zeros(len(call_answered))
+
+        data_index_lo = 0
+        for i in range(len(call_answered)):
+            if i == len(call_answered) - 1 or call_answered[i].date() != call_answered[i + 1].date():
+                data_index_hi = i + 1
+                _, daily_end_times_simulated = daily_simulation(params, data_index_lo, data_index_hi)
+                end_times_simulated[data_index_lo:data_index_hi] = np.array(daily_end_times_simulated)
+
+                data_index_lo = i + 1
+
+        error = np.linalg.vector_norm(end_times_simulated - end_times_actual, ord=1)
+        total_err += error / (len(data) - 1)
+
+    return total_err / num_iterations
+
 if __name__=="__main__":
     np.random.seed(43)
     # print(spsa(lambda x: np.linalg.norm(x) + np.random.normal() + 1, np.array([5., 7.]), c=1, first_step_magnitude_low=1., amount_iterations=500, gradient_mean_size=5))
@@ -213,8 +242,8 @@ if __name__=="__main__":
     #
 
     # try_out_initial_values()
-    develop_from_best_initial_values(5)
-
+    # develop_from_best_initial_values(5)
+    print(f"average error per call: {end_timepoint_validation([1.000318869536092734e+02, 1.000985912491102425e+01, 1.993325821625839822e+00, 6.762314887565674226e+00])}")
 
 
     # import scipy as sc

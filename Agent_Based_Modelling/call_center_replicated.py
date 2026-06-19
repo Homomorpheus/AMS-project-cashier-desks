@@ -28,10 +28,10 @@ mean_interarr_time = 254.26239964 + day_in_year * -0.35616587
 max_time_to_reactivation = 2 * 60
 mean_time_to_reactivation = 30
 
-shape_no_queue = 1.000318869536092734e+02
-shape_slope = 1.000985912491102425e+01
-scale_no_queue = 1.993325821625839822e+00
-scale_slope = 6.762314887565674226e+00
+shape_no_queue = 9.938980708228197614e+01
+shape_slope = 9.983734779789273261e+01
+scale_no_queue = 1.287301472175391037e+00
+scale_slope = 2.132396556419758893e-01
 
 def interarr_time():
     return np.random.exponential(mean_interarr_time)
@@ -39,9 +39,9 @@ def interarr_time():
 def service_duration(customer, queue):
     # needs queue length
     queue_len = len(queue.customers)
-    duration = np.random.gamma(shape = shape_no_queue + shape_slope ** (-queue_len),
-                               scale = scale_no_queue + scale_slope ** (-queue_len),
-                              )
+    duration = np.random.gamma(shape = shape_no_queue + shape_slope / (queue_len + 1),
+                                scale = scale_no_queue + scale_slope / (queue_len + 1),
+                            )
 
     # account for fact that call cannot go beyond 18:00
     if customer.start_service_time + duration >= (18 * 60 * 60 - 1):
@@ -136,6 +136,7 @@ def plot_multi_queue_length_statistics(queue_length_data, simulation_start_time,
         ax[i].plot(x, mean, label="Mittelwert der Schlangenlänge")
 
         ax[i].legend()
+        ax[i].set_xticks([8 * 60 * 60, 18 * 60 * 60], ["8:00", "18:00"])
 
     ax[-1].set_xlabel("Tageszeit")
 

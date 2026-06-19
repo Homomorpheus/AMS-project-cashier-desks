@@ -73,7 +73,7 @@ def start_time_inference(call_started, data):
     # result of linear regression: y = 253.90623376949912 + x * -0.4986322147377886
 
     fig, ax = plt.subplots()
-    ax.plot(date_indices, daily_mean_interarrival, label="Mittlere Zeit zwischen Ankünften am Tag")
+    ax.plot(date_indices, daily_mean_interarrival, "o", label="Mittlere Zeit zwischen Ankünften am Tag")
     ax.plot(date_indices, coeffs[0] + coeffs[1] * np.array(date_indices), label="Least-squares-fit")
     ax.set_xlabel("Arbeitstag")
     ax.legend()
@@ -103,7 +103,8 @@ def processing_time_data_exploration_throughout_year(call_answered, call_ended):
 
     # reveals independence
     fig, ax = plt.subplots()
-    ax.plot(days, processing_times)
+    ax.plot(days, processing_times, "o")
+    ax.set_ylabel("Mittlere Bearbeitungsdauer eines Tages")
     fig.show()
     fig.savefig(Path("plots") / Path("processing_time_year.pdf"))
 
@@ -134,7 +135,7 @@ def processing_time_data_exploration_throughout_day(call_answered, call_ended, d
 
     # reveals drop at end of day
     fig, ax = plt.subplots()
-    ax.plot(minute_times, per_minute_processing_times)
+    ax.plot(minute_times, per_minute_processing_times, "o")
     ax.set_xlabel("Minute des Tages")
     ax.set_ylabel("Mittlere Bearbeitungsdauer,\ninnerhalb einer Minute des Tages")
     plt.show()
@@ -145,8 +146,9 @@ def interarrival_data_exploration_throughout_day(call_started):
     interarrival_times = []
     day_times = []
     for i in range(1, len(call_started)):
-        interarrival_times.append((call_started[i] - call_started[i - 1]).total_seconds())
-        day_times.append(call_started[i].time())
+        if call_started[i].date() == call_started[i - 1].date():
+            interarrival_times.append((call_started[i] - call_started[i - 1]).total_seconds())
+            day_times.append(call_started[i-1].time())
 
     sort_indices = np.argsort(day_times)
     interarrival_times = [interarrival_times[i] for i in sort_indices]
@@ -162,21 +164,26 @@ def interarrival_data_exploration_throughout_day(call_started):
             per_minute_interarr_times.append(np.mean(current_interarr_times))
             current_interarr_times = []
             minute_times.append(day_times[i].hour*60 + day_times[i].minute)
-            print(f"time {day_times[i]}")
+            # print(f"time {day_times[i]}")
 
     fig, ax = plt.subplots()
     print(per_minute_interarr_times)
-    ax.semilogy(minute_times, per_minute_interarr_times)
+    ax.plot(minute_times, per_minute_interarr_times, "o")
     ax.set_xlabel("Minute des Tages")
     ax.set_ylabel("Mittlere Dauer zwischen Starts von Anrufen,\ninnerhalb einer Minute des Tages")
     fig.savefig(Path("plots") / Path("arrival_data_daytime.pdf"))
     plt.show()
 
+def sd_processing_time(call_answered, call_ended):
+    processing_times = [(call_ended[i] - call_answered[i]).total_seconds() for i in range(len(call_started))]
+    return np.std(processing_times)
+
 
 if __name__=="__main__":
     call_started, call_answered, call_ended, data = read_call_center_data()
-    interarrival_data_exploration_throughout_day(call_started)
-    verify_first_come_first_serve(call_started, call_answered)
-    start_time_inference(call_started, data)
-    processing_time_data_exploration_throughout_year(call_answered, call_ended)
-    processing_time_data_exploration_throughout_day(call_started, call_ended, data)
+    # interarrival_data_exploration_throughout_day(call_started)
+    # verify_first_come_first_serve(call_started, call_answered)
+    # start_time_inference(call_started, data)
+    # processing_time_data_exploration_throughout_year(call_answered, call_ended)
+    # processing_time_data_exploration_throughout_day(call_started, call_ended, data)
+    print(sd_processing_time(call_answered, call_ended))

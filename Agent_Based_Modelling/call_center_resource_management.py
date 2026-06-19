@@ -29,10 +29,10 @@ mean_interarr_time = 254.26239964 + day_in_year * -0.35616587
 max_time_to_reactivation = 2 * 60
 mean_time_to_reactivation = 30
 
-shape_no_queue = 1.000318869536092734e+02
-shape_slope = 1.000985912491102425e+01
-scale_no_queue = 1.993325821625839822e+00
-scale_slope = 6.762314887565674226e+00
+shape_no_queue = 9.938980708228197614e+01
+shape_slope = 9.983734779789273261e+01
+scale_no_queue = 1.287301472175391037e+00
+scale_slope = 2.132396556419758893e-01
 
 def interarr_time():
     return np.random.exponential(mean_interarr_time)
@@ -40,9 +40,9 @@ def interarr_time():
 def service_duration(customer, queue):
     # needs queue length
     queue_len = len(queue.customers)
-    duration = np.random.gamma(shape = shape_no_queue + shape_slope ** (-queue_len),
-                               scale = scale_no_queue + scale_slope ** (-queue_len),
-                              )
+    duration = np.random.gamma(shape = shape_no_queue + shape_slope / (queue_len + 1),
+                                scale = scale_no_queue + scale_slope / (queue_len + 1),
+                            )
 
     # account for fact that call cannot go beyond 18:00
     # if customer.start_service_time + duration >= (18 * 60 * 60 - 1):
@@ -123,7 +123,7 @@ def plot_multi_queue_length_statistics(queue_length_data, simulation_start_time,
 
         # median
         mean = timeseries_tools.time_series_quantile(timeseries, x, 0.5)
-        ax[i].plot(x, mean, label="Queue length median")
+        ax[i].plot(x, mean, label="Median der Schlangenlänge")
 
         # 1. quartile
         quartile_1 = timeseries_tools.time_series_quantile(timeseries, x, 0.25)
@@ -134,12 +134,15 @@ def plot_multi_queue_length_statistics(queue_length_data, simulation_start_time,
         ax[i].fill_between(x, quartile_2, quartile_1, color="blue", alpha=0.1)
 
         mean = timeseries_tools.time_series_mean(timeseries, x)
-        ax[i].plot(x, mean, label="Queue length mean")
+        ax[i].plot(x, mean, label="Mittelwert der Schlangenlänge")
+
+        ax[i].set_xticks([8 * 60 * 60, 18 * 60 * 60], ["8:00", "18:00"])
+        ax[i].set_xlabel("Tageszeit")
 
     plt.show()
-    fig.savefig(Path("plots") / Path("queue_length_call_center_res_man.pdf"))
-    # ax[0].legend()
+    ax[0].legend()
     # ax[1].legend()
+    fig.savefig(Path("plots") / Path("queue_length_call_center_res_man.pdf"))
 
 # %%
 
@@ -161,7 +164,7 @@ plot_multi_queue_length_statistics(queue_length_data, simulation_start_time, sim
 
 # %%
 
-def plot_cashier_activity(cashier_activity_data, simulation_start_time, simulation_end_time):
+def plot_cashier_activity_multiplot(cashier_activity_data, simulation_start_time, simulation_end_time):
     # restructure by cashier
     activity_by_cashiers = [[result[i] for result in cashier_activity_data] for i in range(amount_cashiers)]
 
@@ -198,10 +201,42 @@ def plot_cashier_activity(cashier_activity_data, simulation_start_time, simulati
         else:
             ax[i].plot(x, mean)
 
+        ax[i].set_xticks([8 * 60 * 60, 18 * 60 * 60], ["8:00", "18:00"])
+
         ax[1].yaxis.set_major_formatter(mticker.FuncFormatter(tick_trafo))
 
     ax[-1].set_xlabel("Tageszeit")
     fig.legend(loc="outside right upper")
+    plt.show()
+    fig.savefig(Path("plots") / Path("worker_activity_res_man.pdf"))
+
+def plot_cashier_activity(cashier_activity_data, simulation_start_time, simulation_end_time):
+    # restructure by cashier
+    # activity_by_cashiers = [[result[i] for result in cashier_activity_data] for i in range(amount_cashiers)]
+
+    fig, ax = plt.subplots()
+
+    x = np.linspace(simulation_start_time, simulation_end_time)
+
+    activity_tensor = np.array([[result[i].evaluate(x) for result in cashier_activity_data] for i in range(amount_cashiers)])
+    assert activity_tensor.shape[0] == amount_cashiers
+    assert activity_tensor.shape[1] == len(cashier_activity_data)
+    assert activity_tensor.shape[2] == len(x)
+    cashiers_summed = np.sum(activity_tensor, axis=0)
+
+    mean = np.mean(cashiers_summed, axis=0)
+    median = np.median(cashiers_summed, axis=0)
+    quartile_1 = np.quantile(cashiers_summed, axis=0, q=0.25)
+    quartile_3 = np.quantile(cashiers_summed, axis=0, q=0.75)
+
+    ax.plot(x, median, label="Median")
+    ax.fill_between(x, quartile_3, quartile_1, color="blue", alpha=0.1)
+    ax.plot(x, mean, label="Mittelwert")
+
+    ax.set_xticks([8 * 60 * 60, 18 * 60 * 60], ["8:00", "18:00"])
+    ax.set_xlabel("Tageszeit")
+    ax.set_ylabel("Anzahl Mitarbeitender an Schlange")
+    ax.legend()
     plt.show()
     fig.savefig(Path("plots") / Path("worker_activity_res_man.pdf"))
 
