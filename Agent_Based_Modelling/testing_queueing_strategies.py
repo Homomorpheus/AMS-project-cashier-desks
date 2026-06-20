@@ -1,10 +1,11 @@
+# monte carlo simulations for the multi queue model
+
 import itertools
 import numpy as np
 import matplotlib.pyplot as plt
 import agents
 import events
 import timeseries_tools
-import heapq
 
 
 # simulates multi queue scenario and returns data as timeseries_tools.TimeStepFunction

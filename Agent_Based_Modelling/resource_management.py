@@ -132,6 +132,8 @@ def compare_queue_length_statistics(queue_length_data_rm, queue_length_data_no_r
 
     ax[0].set_ylabel('Queue length mean RM')
     ax[1].set_ylabel('Queue length median RM')
+    ax[0].set_ylim(0, 2)
+    ax[1].set_ylim(0, 2)
     fig.legend(loc='upper right')
     plt.show()
 
@@ -152,6 +154,8 @@ def compare_queue_length_statistics(queue_length_data_rm, queue_length_data_no_r
 
     ax[0].set_ylabel('Queue length mean NO RM')
     ax[1].set_ylabel('Queue length median NO RM')
+    ax[0].set_ylim(0, 2)
+    ax[1].set_ylim(0, 2)
     fig.legend(loc='upper right')
     plt.show()
 
