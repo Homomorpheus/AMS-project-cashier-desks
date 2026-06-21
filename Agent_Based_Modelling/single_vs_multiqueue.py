@@ -59,9 +59,6 @@ def simulate_multiqueue(seed, simulation_end_time, service_time, interarr_time, 
 
 def compare_queue_length_statistics(queue_length_data_single, queue_length_data_multi, simulation_end_time):
 
-    """for timeseries in total_queue_length_data:
-        ax[0].step(timeseries.timepoints, timeseries.values, where='post', color=(0.8, 0.8, 0.8))
-        ax[1].step(timeseries.timepoints, timeseries.values, where='post', color=(0.8, 0.8, 0.8))"""
     fig, ax = plt.subplots(ncols=2, sharex=True, sharey=True)
     # mean and median for single queue
     x = np.linspace(0, simulation_end_time)
@@ -89,15 +86,6 @@ def compare_queue_length_statistics(queue_length_data_single, queue_length_data_
     ax[0].legend()
     ax[1].legend()
 
-    """# mean +- standard deviation
-    std_dev_single = timeseries_tools.time_series_std_deviation(queue_length_data_single, x)
-    ax[0].plot(x, mean_single - std_dev_single, color='red', linestyle='dashed', linewidth=1)
-    ax[0].plot(x, mean_single + std_dev_single, color='red', linestyle='dashed', linewidth=1)
-    std_dev_multi = timeseries_tools.time_series_std_deviation(queue_length_data_multi, x)
-    ax[0].plot(x, mean_multi - std_dev_multi, color='blue', linestyle='dashed', linewidth=1)
-    ax[0].plot(x, mean_multi + std_dev_multi, color='blue', linestyle='dashed', linewidth=1)
-"""
-
 
 def compare_cashiers_busy(cashiers_busy_data_single, cashiers_busy_data_multi, simulation_end_time):
     cashiers_busy_sorted_by_cashiers_single = [[cashiers_busy_data_single[j][i] for j in range(len(cashiers_busy_data_single))] for i in range(len(cashiers_busy_data_single[0]))]
@@ -110,9 +98,6 @@ def compare_cashiers_busy(cashiers_busy_data_single, cashiers_busy_data_multi, s
     for i in range(amount_cashiers):
         multi_timeseries_single = cashiers_busy_sorted_by_cashiers_single[i]
         multi_timeseries_multi = cashiers_busy_sorted_by_cashiers_multi[i]
-
-        # for series in multi_timeseries_multi:
-        #     ax[i].step(series.timepoints, series.values, where='post', color=(0.8, 0.8, 0.8))
 
         # median and quartiles for single queue
         median_single = timeseries_tools.time_series_quantile(multi_timeseries_single, x, 0.5)

@@ -1,5 +1,6 @@
 """
-Statistical inference on the arrival of customers in the queue.
+Statistical inference on the arrival of customers in the queue,
+for the dataset from https://www.kaggle.com/datasets/donovanbangs/call-centre-queue-simulation
 It is assumed that the distribution of the interarrival time
 does not depend on the cash desk and its queue.
 """
@@ -164,7 +165,6 @@ def interarrival_data_exploration_throughout_day(call_started):
             per_minute_interarr_times.append(np.mean(current_interarr_times))
             current_interarr_times = []
             minute_times.append(day_times[i].hour*60 + day_times[i].minute)
-            # print(f"time {day_times[i]}")
 
     fig, ax = plt.subplots()
     print(per_minute_interarr_times)
@@ -181,9 +181,9 @@ def sd_processing_time(call_answered, call_ended):
 
 if __name__=="__main__":
     call_started, call_answered, call_ended, data = read_call_center_data()
-    # interarrival_data_exploration_throughout_day(call_started)
-    # verify_first_come_first_serve(call_started, call_answered)
-    # start_time_inference(call_started, data)
-    # processing_time_data_exploration_throughout_year(call_answered, call_ended)
-    # processing_time_data_exploration_throughout_day(call_started, call_ended, data)
+    interarrival_data_exploration_throughout_day(call_started)
+    verify_first_come_first_serve(call_started, call_answered)
+    start_time_inference(call_started, data)
+    processing_time_data_exploration_throughout_year(call_answered, call_ended)
+    processing_time_data_exploration_throughout_day(call_started, call_ended, data)
     print(sd_processing_time(call_answered, call_ended))

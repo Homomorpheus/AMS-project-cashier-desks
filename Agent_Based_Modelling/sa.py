@@ -3,8 +3,7 @@ import numpy as np
 
 def sa(objective_fctn, start, c, first_step_magnitude_low, amount_iterations, gradient_mean_size, param_switch=None):
     """
-    stochastic approximation; minimization algorithm;
-    this implementation optimizes only among component-wise positive input values
+    stochastic approximation; minimization algorithm
     """
 
     if param_switch is None:
@@ -113,7 +112,8 @@ def sa_pos(objective_fctn, start, c, first_step_magnitude_low, amount_iterations
 def sa_pos_adaptive(objective_fctn, start, c, first_step_magnitude_low, amount_iterations, gradient_mean_size, eps, param_switch=None):
     """
     stochastic approximation; minimization algorithm;
-    this implementation optimizes only among values that are >= eps (component-wise)
+    this implementation optimizes only among values that are >= eps (component-wise);
+    with adaptive step size control
     """
 
     if param_switch is None:

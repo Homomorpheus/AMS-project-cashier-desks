@@ -7,8 +7,6 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-# matplotlib.rcParams['figure.figsize'] = [12, 12]
-
 import agents
 import events
 import timeseries_tools
@@ -67,8 +65,6 @@ def simulate(simulation_end_time, interarr_time, amount_cashiers):
     "run the actual, single simulation"
 
     # create cashier agents, customer agents, and the queue
-    # cashiers = [agents.Cashier(service_time, active=False, threshold_lo=2, threshold_hi=4, time_to_activate=time_to_activate) for _ in range(amount_cashiers)]
-    # cashiers[0].set_active(True, simulation_start_time)
     cashiers = [agents.Cashier(service_time=lambda: None) for _ in range(amount_cashiers)]
     queues = [agents.Queue(cashiers, [])]
 
@@ -158,14 +154,6 @@ plot_multi_queue_length_statistics(queue_length_data, simulation_start_time, sim
 
 # %%
 
-
-# plot how busy the cashiers are
-# cashiers_busy_data = [result[1] for result in simulation_results]
-# plot_cashiers_busy(cashiers_busy_data, simulation_end_time)
-
-
-# %%
-
 def plot_cashier_activity(cashier_activity_data, simulation_start_time, simulation_end_time):
     # restructure by cashier
     activity_by_cashiers = [[result[i] for result in cashier_activity_data] for i in range(amount_cashiers)]
@@ -183,10 +171,8 @@ def plot_cashier_activity(cashier_activity_data, simulation_start_time, simulati
 
         # 1. quartile
         quartile_1 = timeseries_tools.time_series_quantile(timeseries, x, 0.25)
-        # ax[1].plot(x, quartile_1, label="1. quartile")
         # 3. quartile
         quartile_2 = timeseries_tools.time_series_quantile(timeseries, x, 0.75)
-        # ax[1].plot(x, quartile_2, label="3. quartile")
         ax[1 + i].fill_between(x, quartile_2, quartile_1, color="blue", alpha=0.1)
 
     plt.show()
@@ -213,10 +199,8 @@ def plot_cashiers_busy(cashier_business_data, simulation_start_time, simulation_
 
         # 1. quartile
         quartile_1 = timeseries_tools.time_series_quantile(timeseries, x, 0.25)
-        # ax[1].plot(x, quartile_1, label="1. quartile")
         # 3. quartile
         quartile_2 = timeseries_tools.time_series_quantile(timeseries, x, 0.75)
-        # ax[1].plot(x, quartile_2, label="3. quartile")
         ax[1 + i].fill_between(x, quartile_2, quartile_1, color="blue", alpha=0.1)
 
     plt.show()
@@ -239,13 +223,3 @@ print(f"\t1. quartile: {np.quantile(customer_waiting_times, q=0.25)}")
 print(f"\tmedian: {np.median(customer_waiting_times)}")
 print(f"\t3. quartile: {np.quantile(customer_waiting_times, q=0.75)}")
 print()
-
-# # cashier throughput
-# cashier_throughput = np.array([result[3] for result in simulation_results]).T
-# print("Cashier throughput:")
-# print(f"\tmean: {np.mean(cashier_throughput, axis=1)}")
-# print(f"\tstandard deviation: {np.std(cashier_throughput, axis=1, ddof=1)}")
-# print(f"\t1. quartile: {np.quantile(cashier_throughput, axis=1, q=0.25)}")
-# print(f"\tmedian: {np.median(cashier_throughput, axis=1)}")
-# print(f"\t3. quartile: {np.quantile(cashier_throughput, axis=1, q=0.75)}")
-# print()

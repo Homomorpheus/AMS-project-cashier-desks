@@ -168,7 +168,7 @@ class Queue:
     def set_active(self, boolean, time):
         if self._active != boolean:
             self._active = boolean
-            # print(f"set {"in" if not boolean else ""} active")
+
             if self.log:
                 self.timepoints_activity_states.append(time)
                 self.activity_states.append(boolean)

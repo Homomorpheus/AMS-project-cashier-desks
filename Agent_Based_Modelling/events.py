@@ -22,10 +22,7 @@ class DES:
         time = float("-inf")
         while True:
             current_event = self.pop()
-            # if len(self.event_list) > 0 and self.event_list[0].scheduled_time < current_event.scheduled_time:
-            #     breakpoint()
             if current_event.scheduled_time < time:
-                breakpoint()
                 raise RuntimeError("event list not sorted")
             time = current_event.scheduled_time
             if time > end_time:
@@ -116,11 +113,7 @@ class Arrival(Event):
 
 
     def execute(self, des):
-        # add Customer to shortest queue
-        """print('Customer arriving')
-        print('Current queue lengths:')
-        for queue in self.queues:
-            print(str(queue))"""
+        # find shortest queue, to add Customer
         shortest_queue_index = self.shortest_active_queue_index()
 
         # handle the case that there is no active queue
@@ -134,10 +127,7 @@ class Arrival(Event):
                                                  ),
                                   time = self.scheduled_time
                                  )
-        """print('Customer chose queue')
-        print('Current queue lengths:')
-        for queue in self.queues:
-            print(str(queue))"""
+
         # schedule next arrival
         des.push(Arrival(self.scheduled_time+self.interarr_time(), self.interarr_time,
                          self.queues, self.customer_properties
@@ -184,8 +174,6 @@ class StartService(Event):
         self.cashier.set_busy(True, self.scheduled_time)
         if self.customer is None:
             self.customer = self.chosen_queue.remove_customer(time = self.scheduled_time)
-            """if self.customer == "empty":
-                breakpoint()"""
             assert self.customer != "empty"
 
         # store waiting time

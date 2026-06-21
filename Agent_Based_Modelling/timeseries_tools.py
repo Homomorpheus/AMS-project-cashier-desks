@@ -9,7 +9,7 @@ from itertools import groupby
 
 
 class TimeSeriesStepFunction:
-    "A step function; with values stored at the beginning of the step, as a time series"
+    "A 0-order-hold step function; with values stored at the beginning of the step, as a time series"
 
     def __init__(self, timepoints:list[float], values:list[float]):
         assert len(timepoints) == len(values)

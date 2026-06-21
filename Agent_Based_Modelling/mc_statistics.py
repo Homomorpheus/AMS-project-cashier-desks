@@ -33,11 +33,6 @@ def simulate(simulation_end_time, service_time, interarr_time, amount_cashiers=2
 def plot_queue_length_statistics(queue_length_data:list[timeseries_tools.TimeSeriesStepFunction], simulation_end_time, filename=None):
     # plotting
 
-    """for timeseries in queue_length_data:
-        ax[0].step(timeseries.timepoints, timeseries.values, where='post', color=(0.8, 0.8, 0.8))
-        ax[1].step(timeseries.timepoints, timeseries.values, where='post', color=(0.8, 0.8, 0.8), zorder=1)
-"""
-
     x = np.linspace(0, simulation_end_time, simulation_end_time+1)
 
     # median

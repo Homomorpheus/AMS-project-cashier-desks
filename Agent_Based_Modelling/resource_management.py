@@ -9,7 +9,6 @@ import numpy as np
 import agents
 import events
 import timeseries_tools
-import mc_statistics
 
 
 simulation_end_time = 240
@@ -213,6 +212,31 @@ def plot_cashiers_busy(cashiers_busy_data, simulation_end_time):
 
     plt.show()
 
+def plot_waiting_times_multi_boxplot(simulation_results, simulation_results_rm, filename=None):
+    customer_waiting_times = [list(itertools.chain.from_iterable(result[2][i] for result in simulation_results)) for i in range(amount_cashiers)]
+    customer_waiting_times_rm = [list(itertools.chain.from_iterable(result[2][i] for result in simulation_results_rm)) for i in range(amount_cashiers)]
+
+    tick_labels = [f"Schlange {i + 1}" for i in range(amount_cashiers)]
+
+    fig = plt.figure(figsize=(12, 6))
+    gs = fig.add_gridspec(ncols=2, wspace=0)
+    ax = gs.subplots(sharey=True)
+
+    ax[0].boxplot(customer_waiting_times_rm, showmeans=True, tick_labels=tick_labels, whis=(0, 100))
+    # ax[0].legend([bpl0["means"][0]], ["Mittelwert"])
+    ax[0].set_ylabel("Wartezeit")
+    ax[0].set_xlabel("Mit Ressourcenmanagement")
+
+
+    bpl1 = ax[1].boxplot(customer_waiting_times, showmeans=True, tick_labels=tick_labels, whis=(0, 100))
+    ax[1].legend([bpl1["means"][0]], ["Mittelwert"])
+    # ax[1].set_ylabel("Wartezeit in Minuten")
+    ax[1].set_xlabel("Ohne Ressourcenmanagement")
+
+    plt.show()
+    if filename is not None:
+        fig.savefig(filename)
+
 
 # generate simulation seeds
 np.random.seed(17)
@@ -283,3 +307,5 @@ print(f"\t1. quartile: {np.quantile(cashier_throughput, axis=1, q=0.25)}")
 print(f"\tmedian: {np.median(cashier_throughput, axis=1)}")
 print(f"\t3. quartile: {np.quantile(cashier_throughput, axis=1, q=0.75)}")
 print()
+
+plot_waiting_times_multi_boxplot(simulation_results_no_rm, simulation_results_rm, filename=Path("plots") / Path("waiting_boxplot_res_man.pdf"))

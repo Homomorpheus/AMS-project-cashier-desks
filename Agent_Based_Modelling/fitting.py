@@ -1,18 +1,13 @@
 import heapq
-import multiprocessing
-import time
-import os
 import datetime
 from pathlib import Path
 
-# import matplotlib.pyplot as plt
 import numpy as np
 import plotly.express as px
 
 import agents
 import events
 import data_exploration
-import spsa
 import sa
 
 
@@ -74,9 +69,8 @@ def daily_simulation(params, data_index_lo, data_index_hi):
                                              customer_properties={"caller number": caller_num}
                                             ))
 
-    # run the DES
+    # run the DES, with all Arrival events on the list
     des = events.DES(None)
-    # breakpoint()
     heapq.heapify(arrival_events)
     des.event_list = arrival_events
     des.run(simulation_end_time)
@@ -120,7 +114,6 @@ def graphical_plot():
             z.append(target(np.array([x[i, j], 0.001, y[i, j], 0.001])))
 
     fig = px.scatter_3d(z=np.array(z).ravel(), x=x.ravel(), y=y.ravel())
-    # fig.update_layout(autosize=False, width=500, height=500)
     fig.show()
     fig.write_html(Path("plots") / Path("fitting_objective.html"))
 
@@ -176,7 +169,7 @@ def develop_from_best_initial_values(amount_initial_values=5, save=True):
         np.savetxt("parameters_best.csv", np.hstack((final_param_values[:, None], final_params)))
 
 
-def end_timepoint_validation(params, num_iterations = 20):
+def end_timepoint_validation(params, num_iterations = 200):
     np.random.seed(17)
     total_err = 0
     for i in range(num_iterations):
@@ -198,54 +191,15 @@ def end_timepoint_validation(params, num_iterations = 20):
 
 if __name__=="__main__":
     np.random.seed(43)
-    # print(spsa(lambda x: np.linalg.norm(x) + np.random.normal() + 1, np.array([5., 7.]), c=1, first_step_magnitude_low=1., amount_iterations=500, gradient_mean_size=5))
-    # graphical_plot()
-    # raise SystemExit
 
-    # c = 7481
-    # samples = [target(np.array([10, 0, 10, 0])) for _ in range(20)]
-    # print(samples)
-    # print(np.std(samples))
-    # samples = [target(np.array([-208.81914121,   20.76756743, -146.5514645, -81.03524413])) for _ in range(20)] # for **2 + 1
-    # print(np.mean(samples))
-    # print(np.std(samples))
-    # samples = [target(np.array([44,   22., 44, 22])) for _ in range(20)] # for **2 + 1
-    # print(np.mean(samples))
-    # print(np.std(samples))
-
-    # samples = [target(np.array([10,   0., 10, 0.])) for _ in range(20)]
-    # print(np.mean(samples))
-    # print(np.std(samples))
-    # samples = [target(np.array([15,   0., 15, 0.])) for _ in range(20)]
-    # print(np.mean(samples))
-    # print(np.std(samples))
-    #
-    #
-    #
-
-    # samples = [target(np.array([9.17970246, 1.66294952, 9.65026164, 3.47048503])) for _ in range(20)]
-    # print(np.mean(samples))
-    # print(np.std(samples))
-
-    # print("end")
-
-    # initial starting value: [10., 0.001, 10., 0.001]
-    # previous results:
-        # [-208.81914121   20.76756743 -146.5514645   -81.03524413] (err 51.5 mio)
-        # [1452.56922387  671.68838925 1027.94161676  747.46046144] (err 52 mio)
-        # [2.5,   0., 2.5, 0.] (err 13 mio)
-
-
-    # BEST SO FAR:
-    # opt = sa.sa_pos_adaptive(target, np.array([1.0e+03,1.0e+03,1.000000000000000056e-01,1.000000000000000056e-01]), c=0.5, first_step_magnitude_low=7, amount_iterations=500, gradient_mean_size=3, eps=np.array([1, 0., 1, 0.]), param_switch=3)
-    # print(opt)
-    #
-
-    # try_out_initial_values()
-    # develop_from_best_initial_values(5)
+    # the following 3 functions can be run separately,
+    # with the others commented out:
+    try_out_initial_values()
+    develop_from_best_initial_values(5)
     print(f"average error per call: {end_timepoint_validation([1.000318869536092734e+02, 1.000985912491102425e+01, 1.993325821625839822e+00, 6.762314887565674226e+00])}")
 
 
+    # does not work:
     # import scipy as sc
     # res = sc.optimize.dual_annealing(lambda x, *args: target(x), [(0.1, 1000), (0, 50), (0.1, 1000), (0, 50)], maxiter=5)
     # print(res.x)
